@@ -1,22 +1,20 @@
 package com.example.Kanban.Board.configuration;
 
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.time.Duration;
-
-import java.util.concurrent.ConcurrentHashMap;
-
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class LimitingRequestFilter extends OncePerRequestFilter {
@@ -29,6 +27,9 @@ public class LimitingRequestFilter extends OncePerRequestFilter {
 
     @Value("${server.port}")
     private Integer serverPort;
+
+    @Value("${spring.graphql.path}")
+    private String graphqlPath;
 
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
@@ -47,7 +48,7 @@ public class LimitingRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         String url = request.getRequestURL().toString();
-        if(url.startsWith("http://"+appEnvironment+":"+serverPort+"/api")){
+        if (url.startsWith("http://" + appEnvironment + ":" + serverPort + "/api") || url.contains(graphqlPath)) {
                 String remoteAddr = request.getRemoteAddr();
 
             final Bucket bucket = buckets.computeIfAbsent(remoteAddr, k -> createNewBucket());
