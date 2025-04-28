@@ -1,0 +1,46 @@
+input UserInput {
+  id: ID!
+  fullName: String
+  email: String
+  token: String
+  password: String
+  image: String
+}
+
+input TaskInput {
+  title: String!
+  description: String!
+  taskStatus: String!
+  taskPriority: String!
+  users: [UserInput!]
+}
+
+type Task {
+  id: ID
+  title: String
+  description: String
+  taskStatus: String
+  taskPriority: String
+  users: [User!]
+}
+
+type User {
+  id: ID
+  email: String
+  fullName: String
+  token: String
+  password: String
+  image: String
+}
+
+type Query {
+    getTaskById(id: ID!): Task!
+    getTasks(page: Int!, pageSize: Int!, columns: [String!], order: String, description: String): [Task!]!
+    getUsers: [User]
+}
+
+type Mutation {
+    createTask(task: TaskInput!): Task
+    updateTask(id: ID!, task: TaskInput!): Task
+    deleteTask(id: ID!): Task
+}
