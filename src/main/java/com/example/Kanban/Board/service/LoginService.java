@@ -21,11 +21,11 @@ import io.jsonwebtoken.Jwts;
 @Service
 public class LoginService {
 
-    private UserConverter userConverter;
+    private final UserConverter userConverter;
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${token.duration.in.hours}")
     private Integer durationInHours;

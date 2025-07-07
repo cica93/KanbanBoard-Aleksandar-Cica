@@ -14,10 +14,6 @@ import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Object> handleBadCredentialsException(BadCredentialsException ex) {
-        return new ResponseEntity<>(new ErrorResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
-    }
 
     @ExceptionHandler(ForbiddenMethodException.class)
     public ResponseEntity<Object> handleForbiddenMethodException(Exception ex) {
@@ -25,22 +21,17 @@ public class GlobalExceptionHandler {
                 HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(NotValidTaskPriorityException.class)
-    public ResponseEntity<Object> handleNotValidTaskPriorityExceptionException(NotValidTaskPriorityException ex) {
+
+    @ExceptionHandler(exception = {
+        UserDoesNotExistException.class,
+        NotValidTaskStatusException.class,
+        NotValidTaskPriorityException.class,
+        BadCredentialsException.class
+    })
+    public ResponseEntity<Object> handleUserDoesNotExistExceptionException(RuntimeException ex) {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
-
-    @ExceptionHandler(UserDoesNotExistException.class)
-    public ResponseEntity<Object> handleUserDoesNotExistExceptionException(UserDoesNotExistException ex) {
-        return new ResponseEntity<>(new ErrorResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(NotValidTaskStatusException.class)
-    public ResponseEntity<Object> handleNotValidTaskStatusExceptionException(NotValidTaskStatusException ex) {
-        return new ResponseEntity<>(new ErrorResponse(ex.getMessage()),
-                HttpStatus.BAD_REQUEST);
-    }
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGenericException(Exception ex) {

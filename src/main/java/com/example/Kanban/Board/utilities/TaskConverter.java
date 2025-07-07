@@ -11,13 +11,14 @@ import com.example.Kanban.Board.model.TaskStatus;
 
 public class TaskConverter extends GenericConverter<Task, TaskDTO> {
 
-    private UserConverter userConverter = new UserConverter();
+    private final UserConverter userConverter = new UserConverter();
 
     @Override
     public Task convertDTOModelToModel(TaskDTO dtoModel) throws NotValidTaskStatusException, NotValidTaskPriorityException {
         Task task = new Task();
         task.setId(dtoModel.getId());
-        task.setVersion(dtoModel.getVersion() == null ? Integer.valueOf(0): dtoModel.getVersion());
+        Integer version = dtoModel.getVersion();
+        task.setVersion(version == null ? 0 : version);
         task.setDescription(dtoModel.getDescription());
         task.setTitle(dtoModel.getTitle());
         task.setTaskStatus(convertStringToTaskStatus(dtoModel.getTaskStatus()));

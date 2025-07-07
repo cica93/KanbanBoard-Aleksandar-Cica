@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -33,19 +32,18 @@ import jakarta.validation.Validator;
 @Service
 public class TaskService {
 
-    private TaskRepository taskRepository;
+    private final TaskRepository taskRepository;
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private Validator validator;
+    private final Validator validator;
 
-    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    private TaskConverter taskConverter;
+    private final TaskConverter taskConverter;
     
-    private UserConverter userConverter;
+    private final UserConverter userConverter;
 
-    @Autowired
     public TaskService(TaskRepository taskRepository, UserRepository userRepository, Validator validator,
             NamedParameterJdbcTemplate namedParameterJdbcTemplate, TaskConverter taskConverter, UserConverter userConverter) {
         this.taskRepository = taskRepository;

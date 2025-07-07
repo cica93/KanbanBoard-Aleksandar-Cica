@@ -3,7 +3,6 @@ package com.example.Kanban.Board.service;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,10 +19,9 @@ import jakarta.persistence.criteria.Predicate;
 @Service
 public class UserService {
     
-    private UserConverter userConverter;
-    private UserRepository userRepository;
+    private final UserConverter userConverter;
+    private final UserRepository userRepository;
 
-    @Autowired
     public UserService(UserRepository userRepository, UserConverter userConverter) {
         this.userRepository = userRepository;
         this.userConverter = userConverter;

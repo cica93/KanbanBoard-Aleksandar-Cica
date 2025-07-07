@@ -3,7 +3,6 @@ package com.example.Kanban.Board;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -20,14 +19,17 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class InitClass {
 
-    @Autowired
-    private TaskService taskService;
+    private final TaskService taskService;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+
+    public InitClass(PasswordEncoder passwordEncoder, TaskService taskService, UserRepository userRepository) {
+        this.passwordEncoder = passwordEncoder;
+        this.taskService = taskService;
+        this.userRepository = userRepository;
+    }
 
 
       @PostConstruct
