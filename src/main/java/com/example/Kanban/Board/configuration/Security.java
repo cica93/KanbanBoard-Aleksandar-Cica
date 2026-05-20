@@ -13,7 +13,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class Security {
 
-    @Value("${fronted.app.port}")
+    @Value("${frontend.app.port}")
     private Integer port;
 
     @Bean

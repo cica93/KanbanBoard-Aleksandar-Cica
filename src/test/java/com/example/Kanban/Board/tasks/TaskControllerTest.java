@@ -1,91 +1,106 @@
-// package com.example.Kanban.Board.tasks;
+package com.example.Kanban.Board.tasks;
 
-// import java.util.List;
-// import java.util.Optional;
-// import java.util.Set;
+import com.example.Kanban.Board.controller.TaskController;
+import com.example.Kanban.Board.dto.TaskDTO;
+import com.example.Kanban.Board.service.TaskService;
+import com.example.Kanban.Board.model.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-// import static org.junit.jupiter.api.Assertions.assertEquals;
-// import static org.junit.jupiter.api.Assertions.assertNotNull;
-// import org.junit.jupiter.api.BeforeEach;
-// import org.junit.jupiter.api.Test;
-// import static org.mockito.Mockito.when;
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-// import org.springframework.boot.test.context.SpringBootTest;
-// import org.springframework.boot.test.mock.mockito.MockBean;
-// import org.springframework.data.domain.PageRequest;
-// import org.springframework.http.ResponseEntity;
-// import org.springframework.test.web.servlet.MockMvc;
-// import com.example.Kanban.Board.dto.TaskDTO;
-// import com.example.Kanban.Board.model.User;
-// import com.example.Kanban.Board.repository.TaskRepository;
-// import com.example.Kanban.Board.repository.UserRepository;
-// import com.example.Kanban.Board.service.TaskService;
-// import com.example.Kanban.Board.utilities.TaskConverter;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-// import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-// import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-// import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
 
-// @SpringBootTest
-// @AutoConfigureMockMvc
-// public class TaskControllerTest {
-  
-//     @Autowired
-//     private MockMvc mockMvc;
+import java.util.Collections;
+import java.util.List;
 
-//     @MockBean
-//     private TaskService taskService;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-//     @SuppressWarnings("removal")
-//     @MockBean
-//     private TaskRepository taskRepository;
+@WebMvcTest(TaskController.class)
+public class TaskControllerTest {
 
-//     @SuppressWarnings("removal")
-//     @MockBean
-//     private UserRepository userRepository;
+    @Autowired
+    private MockMvc mockMvc;
 
-//     private User defaultUser = new User();
+    @MockBean
+    private TaskService taskService;
 
-//     @BeforeEach
-//     void setUp() {
-     
-//         when(userRepository.findByToken("some-token")).thenReturn(Optional.of(defaultUser));
-//         when(userRepository.countByIdIn(Set.of(1L))).thenReturn(1L);
-      
-//         TaskDTO mockTask = new TaskDTO();
-//         mockTask.setId(1L);
-//         mockTask.setDescription("description");
-//         mockTask.setTitle("title");
-//         mockTask.setTaskStatus("TO_DO");
-//         mockTask.setTaskPriority("LOW");
+    private User mockUser;
 
-//         // Mock taskService behavior
-//         when(taskRepository.findByIdAndDeletedFalse(1L))
-//             .thenReturn(Optional.of(new TaskConverter().convertDTOModelToModel(mockTask)));
-//         when(taskRepository.findByIdAndDeletedFalse(2L)).thenReturn(Optional.empty());
-//         when(taskService.getById(1L)).thenReturn(ResponseEntity.ok(mockTask));
-//         when(taskService.get(PageRequest.of(1,10), null)).thenReturn(ResponseEntity.ok(List.of(mockTask)));
-//     }
+    @BeforeEach
+    public void setup() {
+        mockUser = new User(); // You may want to set some values if needed
+    }
 
-//     @Test
-//     void getTaskFromRepo() throws Exception {
-//       ResponseEntity<TaskDTO> response = taskService.getById(2L);
-//       assertNotNull(response);
-//       assertEquals(200, response.getStatusCode().value());
-//       assertEquals(1L, response.getBody().getId());
-//       assertEquals("title", response.getBody().getTitle());
-//     }
+    @Test
+    public void testGetTasks() throws Exception {
+        TaskDTO taskDTO = new TaskDTO();
+        List<TaskDTO> tasks = Collections.singletonList(taskDTO);
+        when(taskService.get(any(PageRequest.class), anyString()))
+                .thenReturn(ResponseEntity.ok(tasks));
 
-//     @Test
-//     void testGetTask() throws Exception {
-//         TaskDTO task = new TaskDTO();
-//         task.setId(1L);
-//         task.setTitle("Test Title");
-//         when(taskService.getById(1L)).thenReturn(ResponseEntity.ok(task));
+        mockMvc.perform(get("/api/tasks")
+                .param("description", "test"))
+                .andExpect(status().isOk());
+    }
 
-//         mockMvc.perform(get("/app/tasks/1").header("skip-user-interceptor", "skip"))
-//                 .andExpect(status().isOk())
-//                 .andExpect(jsonPath("$.id").value(1L));
-//     }
-// }
+    @Test
+    public void testGetById() throws Exception {
+        TaskDTO taskDTO = new TaskDTO();
+        when(taskService.getById(eq(1L))).thenReturn(ResponseEntity.ok(taskDTO));
+
+        mockMvc.perform(get("/api/tasks/1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testCreateTask() throws Exception {
+        TaskDTO taskDTO = new TaskDTO();
+        when(taskService.create(any(User.class), any(TaskDTO.class)))
+                .thenReturn(ResponseEntity.ok().build());
+
+        mockMvc.perform(post("/api/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Test Task\"}")) // minimal JSON
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testUpdateTask() throws Exception {
+        when(taskService.update(any(User.class), eq(1L), any(TaskDTO.class)))
+                .thenReturn(ResponseEntity.ok().build());
+
+        mockMvc.perform(put("/api/tasks/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Updated Task\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testPatchTask() throws Exception {
+        when(taskService.patch(any(User.class), eq(1L), any(TaskDTO.class)))
+                .thenReturn(ResponseEntity.ok().build());
+
+        mockMvc.perform(patch("/api/tasks/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"description\":\"Partial update\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testDeleteTask() throws Exception {
+        when(taskService.delete(any(User.class), eq(1L)))
+                .thenReturn(ResponseEntity.noContent().build());
+
+        mockMvc.perform(delete("/api/tasks/1"))
+                .andExpect(status().isNoContent());
+    }
+}

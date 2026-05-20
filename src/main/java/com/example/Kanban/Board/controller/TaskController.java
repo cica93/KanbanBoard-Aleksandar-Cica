@@ -2,7 +2,6 @@ package com.example.Kanban.Board.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,8 +26,7 @@ import com.example.Kanban.Board.service.TaskService;
 @RequestMapping("/api/tasks")
 public class TaskController {
     
-    private TaskService taskService;
-    @Autowired
+    private final TaskService taskService;
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }

@@ -42,4 +42,8 @@ public class UserService {
         Page<UserDTO> data = userRepository.findAll(spec, pageable).map(u -> userConverter.convertModelToDTOModel(u));
         return ResponseEntity.ok(data);
     }
+
+    public ResponseEntity<Boolean> hasMail(String email) {
+        return ResponseEntity.ok(userRepository.findByEmail(email).isPresent());
+    }
 }
