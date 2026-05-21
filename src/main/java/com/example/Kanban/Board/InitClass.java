@@ -46,7 +46,7 @@ public class InitClass {
                   int random = (int) (Math.random() * 3);
                   saveTask("Task " + i, "Task description " + i, i % 3 == 0 ? TaskStatus.TO_DO
                           : i % 3 == 1 ? TaskStatus.IN_PROGRESS : TaskStatus.DONE,
-                          random == 0 ? TaskPriority.LOW : random == 1 ? TaskPriority.MED : TaskPriority.HEIGH, users);
+                          random == 0 ? TaskPriority.LOW : random == 1 ? TaskPriority.MED : TaskPriority.HIGH, users);
               }
           }
       }
