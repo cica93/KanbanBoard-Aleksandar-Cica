@@ -24,6 +24,7 @@ public class TaskConverter extends GenericConverter<Task, TaskDTO> {
         task.setTaskStatus(convertStringToTaskStatus(dtoModel.getTaskStatus()));
         task.setTaskPriority(convertStringToTaskPriority(dtoModel.getTaskPriority()));
         task.setUsers(userConverter.convertListOfDTOModelsTOModel(dtoModel.getUsers()));
+        task.setTaskOrder(dtoModel.getTaskOrder());
         return task;
     }
 
@@ -39,6 +40,7 @@ public class TaskConverter extends GenericConverter<Task, TaskDTO> {
         taskDTO.setCreatedBy(model.getCreatedBy());
         taskDTO.setVersion(model.getVersion());
         taskDTO.setUsers(userConverter.convertListOfModelsToDTOModel(model.getUsers()));
+        taskDTO.setTaskOrder(model.getTaskOrder());
         return taskDTO;
     }
 

@@ -13,6 +13,7 @@ public class TaskDTO {
     private List<UserDTO> users;
     private String createdBy;
     private String updatedBy;
+    private Integer taskOrder;
 
     public List<UserDTO> getUsers() {
         return users;
@@ -85,4 +86,13 @@ public class TaskDTO {
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
     }
+
+    public Integer getTaskOrder() {
+        return taskOrder;
+    }
+
+    public void setTaskOrder(Integer taskOrder) {
+        this.taskOrder = taskOrder;
+    }
+
 }

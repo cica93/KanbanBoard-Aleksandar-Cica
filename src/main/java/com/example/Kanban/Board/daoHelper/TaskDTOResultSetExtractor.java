@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.lang.NonNull;
 
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.dto.UserDTO;
@@ -18,7 +19,7 @@ import com.example.Kanban.Board.model.TaskStatus;
 public class TaskDTOResultSetExtractor extends ResultSetProcessor implements ResultSetExtractor<List<TaskDTO>> {
 
     @Override
-    public List<TaskDTO> extractData(ResultSet rs) throws SQLException, DataAccessException {
+    public List<TaskDTO> extractData(@NonNull ResultSet rs) throws SQLException, DataAccessException {
         List<TaskDTO> tasks = new ArrayList<>();
         while (rs.next()) {
             TaskDTO task = new TaskDTO();
@@ -31,6 +32,7 @@ public class TaskDTOResultSetExtractor extends ResultSetProcessor implements Res
             task.setTaskPriority(TaskPriority.values()[rs.getInt("task_priority")].name());
             task.setTaskStatus(TaskStatus.values()[rs.getInt("task_status")].name());
             task.setVersion(rs.getInt("version"));
+            task.setTaskOrder(rs.getInt("task_order"));
             Long id = getResultSetLong(rs, "user_id");
             if (id != null) {
                 UserDTO userDTO = new UserDTO();

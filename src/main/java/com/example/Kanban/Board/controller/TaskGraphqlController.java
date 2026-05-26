@@ -11,10 +11,12 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
+import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.dto.UserDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
+import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
@@ -22,8 +24,9 @@ import com.example.Kanban.Board.service.UserService;
 
 @Controller
 public class TaskGraphqlController {
-    private TaskService taskService;
-    private UserService userService;
+
+    private final TaskService taskService;
+    private final UserService userService;
 
     @Autowired
     public TaskGraphqlController(UserService userService, TaskService taskService) {
@@ -31,6 +34,7 @@ public class TaskGraphqlController {
         this.userService = userService;
     }
 
+    @SuppressWarnings("null")
     @QueryMapping
     public List<UserDTO> getUsers() {
         Sort sort = Sort.by(Sort.Direction.DESC, "id");
@@ -39,22 +43,28 @@ public class TaskGraphqlController {
     }
 
     @MutationMapping
-    public Object createTask(@ContextValue(name = "user") User user, @Argument("task") TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
+    public Object createTask(@ContextValue(name = "user") User user, @Argument("task") TaskDTO taskDTO)
+            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
         return taskService.create(user, taskDTO).getBody();
     }
 
     @MutationMapping
-    public Object updateTask(@ContextValue(name = "user") User user, @Argument Long id, @Argument("task") TaskDTO task) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
+    public Object dragTask(@ContextValue(name = "user") User user, @Argument("dragTask") DragTaskDTO dragTaskDTO) throws NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
+        return taskService.dragTask(user, dragTaskDTO).getBody();
+    }
+
+    @MutationMapping
+    public Object updateTask(@ContextValue(name = "user") User user, @Argument Long id, @Argument("task") TaskDTO task) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
         return taskService.update(user, id, task).getBody();
     }
 
     @MutationMapping
-    public Object deleteTask(@ContextValue(name = "user") User user, @Argument Long id) {
+    public Object deleteTask(@ContextValue(name = "user") User user, @Argument Long id) throws TaskDoesNotExistException {
         return taskService.delete(user, id).getBody();
     }
 
      @QueryMapping
-     public TaskDTO getTaskById(@Argument Long id) {
+    public TaskDTO getTaskById(@Argument Long id) throws TaskDoesNotExistException {
          return taskService.getById(id).getBody();
      }
 

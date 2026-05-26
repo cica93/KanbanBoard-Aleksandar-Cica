@@ -21,6 +21,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Modifying
     @Transactional
+    @Query(value = "UPDATE Task t SET task_order = GREATEST(task_order - 1, 0) WHERE task_order >= ?1 AND task_status = ?2", nativeQuery = true)
+    int decreaseTaskOrder(Integer taskOrder, int taskStatus);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE Task t SET task_order = task_order + 1 WHERE task_order >= ?1 AND task_status = ?2", nativeQuery = true)
+    int increaseTaskOrder(Integer taskOrder, int taskStatus);
+
+    @Modifying
+    @Transactional
     @Query(value = "INSERT INTO user_task (task_id, user_id) values (?1, ?2)", nativeQuery = true)
     void assignUserToTask(Long taskId, Long userId);
 

@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
+import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
@@ -38,7 +40,7 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TaskDTO> getById(User user, @PathVariable Long id) {
+    public ResponseEntity<TaskDTO> getById(User user, @PathVariable Long id) throws TaskDoesNotExistException {
         return taskService.getById(id);
     }
     
@@ -49,18 +51,25 @@ public class TaskController {
     
     @PutMapping("/{id}")
     public ResponseEntity<?> create(User user, @PathVariable Long id, @RequestBody TaskDTO taskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
+            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException,
+            TaskDoesNotExistException {
         return taskService.update(user, id, taskDTO);
     }
     
+    @PutMapping("/drag")
+    public ResponseEntity<?> dragTask(User user, @RequestBody DragTaskDTO dragTaskDTO)
+            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
+        return taskService.dragTask(user, dragTaskDTO);
+    }
+
     @PatchMapping("/{id}")
     public ResponseEntity<?> patch(User user, @PathVariable Long id, @RequestBody TaskDTO taskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
+            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
         return taskService.patch(user, id, taskDTO);
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(User user, @PathVariable Long id)  {
+    public ResponseEntity<?> delete(User user, @PathVariable Long id) throws TaskDoesNotExistException {
         return taskService.delete(user, id);
     }
 

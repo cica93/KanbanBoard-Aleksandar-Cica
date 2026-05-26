@@ -9,6 +9,7 @@ import com.example.Kanban.Board.exceptions.BadCredentialsException;
 import com.example.Kanban.Board.exceptions.ForbiddenMethodException;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
+import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 
 @ControllerAdvice
@@ -24,6 +25,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(exception = {
         UserDoesNotExistException.class,
+        TaskDoesNotExistException.class,
         NotValidTaskStatusException.class,
         NotValidTaskPriorityException.class,
         BadCredentialsException.class

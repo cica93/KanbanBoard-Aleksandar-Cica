@@ -46,7 +46,7 @@ public class InitClass {
                   int random = (int) (Math.random() * 3);
                   saveTask("Task " + i, "Task description " + i, i % 3 == 0 ? TaskStatus.TO_DO
                           : i % 3 == 1 ? TaskStatus.IN_PROGRESS : TaskStatus.DONE,
-                          random == 0 ? TaskPriority.LOW : random == 1 ? TaskPriority.MED : TaskPriority.HIGH, users);
+                          random == 0 ? TaskPriority.LOW : random == 1 ? TaskPriority.MED : TaskPriority.HIGH, i / 3, users);
               }
           }
       }
@@ -60,10 +60,11 @@ public class InitClass {
           return userRepository.save(user);
       }
     
-      private void saveTask(String title, String description, TaskStatus taskStatus, TaskPriority taskPriority,
+    private void saveTask(String title, String description, TaskStatus taskStatus, TaskPriority taskPriority, int task_order,
               List<User> users) {
           Task task = new Task();
           task.setDescription(description);
+          task.setTaskOrder(task_order);
           task.setTitle(title);
           task.setTaskPriority(taskPriority);
           task.setTaskStatus(taskStatus);

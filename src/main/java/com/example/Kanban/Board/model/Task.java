@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.hibernate.annotations.ColumnDefault;
 
+import com.example.Kanban.Board.utilities.TaskEntityListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -19,7 +21,6 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import com.example.Kanban.Board.utilities.TaskEntityListener;
 
 @Entity
 @EntityListeners(TaskEntityListener.class)
@@ -54,6 +55,10 @@ public class Task implements Serializable {
     private String createdBy;
 
     private String updatedBy;
+
+    @ColumnDefault("0")
+    @Column(nullable = false)
+    private Integer taskOrder;
 
     @ManyToMany
     @JoinTable(
@@ -116,6 +121,14 @@ public class Task implements Serializable {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public Integer getTaskOrder() {
+        return taskOrder;
+    }
+
+    public void setTaskOrder(Integer taskOrder) {
+        this.taskOrder = taskOrder;
     }
 
     public boolean isDeleted() {
