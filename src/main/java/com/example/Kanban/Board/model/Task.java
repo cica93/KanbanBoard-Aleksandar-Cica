@@ -30,8 +30,6 @@ public class Task implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private boolean deleted;
-
     @Version
     @ColumnDefault("0")
     private Integer version;
@@ -45,7 +43,7 @@ public class Task implements Serializable {
     private String description;
 
     @Enumerated(EnumType.ORDINAL)
-    @Column(nullable = false)
+    @Column(nullable = true)
     private TaskStatus taskStatus;
 
     @Enumerated(EnumType.ORDINAL)
@@ -129,14 +127,6 @@ public class Task implements Serializable {
 
     public void setTaskOrder(Integer taskOrder) {
         this.taskOrder = taskOrder;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
     }
 
     public String getUpdatedBy() {

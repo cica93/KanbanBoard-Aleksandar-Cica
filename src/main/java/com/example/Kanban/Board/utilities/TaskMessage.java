@@ -10,9 +10,7 @@ public class TaskMessage {
     public TaskMessage(Object object) {
         this.task = object;
         if (object instanceof Task task) {
-            if (task.isDeleted()) {
-                message = "Task is deleted";
-            } else if (task.getUpdatedBy() == null) {
+            if (task.getUpdatedBy() == null) {
                 message = "Task is updated";
             } else {
                 message = "Task is created";

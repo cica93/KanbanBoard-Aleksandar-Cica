@@ -27,6 +27,7 @@ import com.example.Kanban.Board.utilities.ModelValidator;
 import com.example.Kanban.Board.utilities.TaskConverter;
 import com.example.Kanban.Board.utilities.UserConverter;
 
+import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Validator;
 
@@ -62,22 +63,22 @@ public class TaskService {
     }
 
     public ResponseEntity<List<TaskDTO>> get(Pageable pageable, String description) {
-        String q = "WITH all_tasks as (SELECT *, ROW_NUMBER() OVER (PARTITION BY task_status ORDER BY task_order ) AS int_row "
-                + "FROM task WHERE deleted = false AND (:description IS NULL OR LOWER(description) like LOWER(CONCAT('%', :description, '%')) "
-                + "OR LOWER(title) like LOWER(CONCAT('%', :description, '%'))) order by task_order, id desc LIMIT :limit OFFSET :offset) "
+        String q = "WITH all_tasks as (SELECT * , ROW_NUMBER() OVER (PARTITION BY task_status ORDER BY task_order) AS int_row "
+                + "FROM task WHERE (:description IS NULL OR LOWER(description) like LOWER(CONCAT('%', :description, '%')) "
+                + "OR LOWER(title) like LOWER(CONCAT('%', :description, '%')))) "
                 + "SELECT t.id, t.task_priority, t.task_order, t.task_status, t.created_by, t.updated_by, t.version, t.description, t.title, u.id as user_id, u.email, "
                 + "u.full_name, u.image from all_tasks t LEFT JOIN user_task ut on ut.task_id = t.id "
-                + "LEFT JOIN user u on u.id = ut.user_id WHERE t.int_row > :start AND t.int_row <= : end";
+                + "LEFT JOIN user u on u.id = ut.user_id WHERE t.int_row >= :start AND t.int_row < :end ORDER BY t.int_row";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("description", description);
-        params.addValue("end", pageable.getOffset() + pageable.getPageSize());
-        params.addValue("start", pageable.getOffset());
+        params.addValue("end", pageable.getOffset() + pageable.getPageSize() + 1);
+        params.addValue("start", pageable.getOffset() + 1);
         List<TaskDTO> result = namedParameterJdbcTemplate.query(q, params, new TaskDTOResultSetExtractor());
         return ResponseEntity.ok(result);
     }
 
     public ResponseEntity<TaskDTO> getById(Long id) throws TaskDoesNotExistException {
-        return taskRepository.findByIdAndDeletedFalse(id).map(task -> {
+        return taskRepository.findById(id).map(task -> {
             return ResponseEntity.ok(taskConverter.convertModelToDTOModel(task));
         }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
     }
@@ -125,11 +126,16 @@ public class TaskService {
     }
 
     public ResponseEntity<?> update(User user, Long id, TaskDTO taskDTO) throws NotValidTaskPriorityException,
-            NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskRepository.findByIdAndDeletedFalse(id).map(task -> {
+            NotValidTaskStatusException, UserDoesNotExistException, OptimisticLockException, TaskDoesNotExistException {
+        return taskRepository.findById(id).map(task -> {
+            if (!task.getVersion().equals(taskDTO.getVersion())) {
+                throw new OptimisticLockException(
+                        "Task already modified"
+                );
+            }
             taskDTO.setId(id);
             taskDTO.setCreatedBy(task.getCreatedBy());
-            taskDTO.setUpdatedBy(task.getUpdatedBy());
+            taskDTO.setUpdatedBy(user.getEmail());
             taskDTO.setTaskOrder(task.getTaskOrder());
             try {
                 return saveTask(taskConverter.convertDTOModelToModel(taskDTO));
@@ -141,7 +147,7 @@ public class TaskService {
 
     public ResponseEntity<?> dragTask(User user, DragTaskDTO dragTaskDTO) throws
             NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskRepository.findByIdAndDeletedFalse(dragTaskDTO.getTaskId()).map(task -> {
+        return taskRepository.findById(dragTaskDTO.getTaskId()).map(task -> {
             TaskStatus prevTaskStatus = task.getTaskStatus();
             TaskStatus taskStatus = this.taskConverter.convertStringToTaskStatus(dragTaskDTO.getTaskStatus());
             task.setTaskStatus(taskStatus);
@@ -159,8 +165,13 @@ public class TaskService {
 
 
     public ResponseEntity<?> patch(User user, Long id, TaskDTO taskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskRepository.findByIdAndDeletedFalse(id).map(task -> {
+            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, OptimisticLockException, TaskDoesNotExistException {
+        return taskRepository.findById(id).map(task -> {
+            if (!task.getVersion().equals(taskDTO.getVersion())) {
+                throw new OptimisticLockException(
+                        "Task already modified"
+                );
+            }
             if (taskDTO.getDescription() != null) {
                 task.setDescription(taskDTO.getDescription());
             }
@@ -186,13 +197,16 @@ public class TaskService {
     }
 
     @Transactional
-    public ResponseEntity<?> delete(User user, Long id) throws TaskDoesNotExistException {
-       return  taskRepository.findById(id).map(task ->{
-           int result = taskRepository.deleteTask(id, user.getEmail());
-           if (result == 1) {
-               return ResponseEntity.ok().build();
-           }
-           taskRepository.deleteExistingUsersFromTask(id);
+    public ResponseEntity<?> delete(Long id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+        return taskRepository.findById(id).map(task -> {
+            taskRepository.deleteExistingUsersFromTask(id);
+            int result = taskRepository.deleteByIdAndVersion(id, version);
+            if (result == 0) {
+                throw new OptimisticLockException(
+                        "Task already modified"
+                );
+            }
+            taskRepository.decreaseTaskOrder(task.getTaskOrder(), task.getTaskStatus().ordinal());
            return ResponseEntity.ok().build();
         }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
     

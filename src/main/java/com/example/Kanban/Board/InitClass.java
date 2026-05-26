@@ -42,7 +42,7 @@ public class InitClass {
               users.add(user2);
               User user3 = createUser("Milica Milic", "milica@gmail.com", "Milica123!");
               users.add(user3);
-              for (int i = 1; i <= 100; i++) {
+              for (int i = 0; i < 100; i++) {
                   int random = (int) (Math.random() * 3);
                   saveTask("Task " + i, "Task description " + i, i % 3 == 0 ? TaskStatus.TO_DO
                           : i % 3 == 1 ? TaskStatus.IN_PROGRESS : TaskStatus.DONE,

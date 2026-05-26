@@ -22,6 +22,8 @@ import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
 import com.example.Kanban.Board.service.UserService;
 
+import jakarta.persistence.OptimisticLockException;
+
 @Controller
 public class TaskGraphqlController {
 
@@ -59,8 +61,8 @@ public class TaskGraphqlController {
     }
 
     @MutationMapping
-    public Object deleteTask(@ContextValue(name = "user") User user, @Argument Long id) throws TaskDoesNotExistException {
-        return taskService.delete(user, id).getBody();
+    public Object deleteTask(@ContextValue(name = "user") User user, @Argument Long id, @Argument Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+        return taskService.delete(id, version).getBody();
     }
 
      @QueryMapping

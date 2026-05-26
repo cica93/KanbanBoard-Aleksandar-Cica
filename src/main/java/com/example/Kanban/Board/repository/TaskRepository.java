@@ -1,7 +1,5 @@
 package com.example.Kanban.Board.repository;
 
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -36,8 +34,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE Task t SET t.deleted = true, t.updatedBy = ?2 WHERE t.id = ?1")
-    int deleteTask(Long id, String updatedBy);
-
-    Optional<Task> findByIdAndDeletedFalse(Long id);
+    @Query(value = "DELETE FROM Task t WHERE t.id = ?1 AND t.version = ?2", nativeQuery = true)
+    int deleteByIdAndVersion(Long id, Integer version);
 }

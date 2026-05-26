@@ -16,11 +16,13 @@ input TaskInput {
 }
 
 type Task {
-  id: ID
-  title: String
-  description: String
-  taskStatus: String
-  taskPriority: String
+  id: ID!
+  title: String!
+  description: String!
+  taskStatus: String!
+  taskPriority: String!
+  version: Int!
+  taskOrder: Int!
   users: [User!]
 }
 
@@ -42,5 +44,5 @@ type Query {
 type Mutation {
     createTask(task: TaskInput!): Task
     updateTask(id: ID!, task: TaskInput!): Task
-    deleteTask(id: ID!): Task
+    deleteTask(id: ID!, version: Int!): Task
 }

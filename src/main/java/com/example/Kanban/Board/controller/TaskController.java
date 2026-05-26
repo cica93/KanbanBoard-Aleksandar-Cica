@@ -24,6 +24,8 @@ import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
 
+import jakarta.persistence.OptimisticLockException;
+
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
@@ -68,9 +70,9 @@ public class TaskController {
         return taskService.patch(user, id, taskDTO);
     }
     
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(User user, @PathVariable Long id) throws TaskDoesNotExistException {
-        return taskService.delete(user, id);
+    @DeleteMapping("/{id}/{version}")
+    public ResponseEntity<?> delete(User user, @PathVariable Long id, @PathVariable Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+        return taskService.delete(id, version);
     }
 
 }

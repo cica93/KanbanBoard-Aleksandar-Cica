@@ -97,7 +97,7 @@ public class TaskControllerTest {
 
     @Test
     public void testDeleteTask() throws Exception {
-        when(taskService.delete(any(User.class), eq(1L)))
+        when(taskService.delete(1L, 1))
                 .thenReturn(ResponseEntity.noContent().build());
 
         mockMvc.perform(delete("/api/tasks/1"))
