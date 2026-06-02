@@ -23,7 +23,7 @@ public class TaskEntityListener {
     @PostUpdate
     @PostRemove
     public void onChange(Object task) {
-        notificationService.sendEntityUpdate(new TaskMessage(task));
+        notificationService.sendEntityUpdate(task);
     }
 
 }

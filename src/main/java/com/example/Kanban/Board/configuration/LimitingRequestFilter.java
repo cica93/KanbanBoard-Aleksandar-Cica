@@ -49,19 +49,27 @@ public class LimitingRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
         String url = request.getRequestURL().toString();
+
+        // Explicitly allow WebSocket handshake and SockJS info paths through
+        if (url.startsWith("http://" + appEnvironment + ":" + serverPort + "/ws")
+                || url.startsWith("http://" + appEnvironment + ":" + serverPort + "/ws/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         if (url.startsWith("http://" + appEnvironment + ":" + serverPort + "/api") || url.contains(graphqlPath)) {
-                String remoteAddr = request.getRemoteAddr();
+            String remoteAddr = request.getRemoteAddr();
 
             final Bucket bucket = buckets.computeIfAbsent(remoteAddr, k -> createNewBucket());
 
-                if (bucket.tryConsume(1)) {
-                    filterChain.doFilter(request, response);
-                } else {
-                    response.setStatus(429);
-                    response.getWriter().write("Too many requests");
+            if (bucket.tryConsume(1)) {
+                filterChain.doFilter(request, response);
+            } else {
+                response.setStatus(429);
+                response.getWriter().write("Too many requests");
             }
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            filterChain.doFilter(request, response);
         }
    
     }

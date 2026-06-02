@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import com.example.Kanban.Board.daoHelper.TaskDTOResultSetExtractor;
@@ -128,13 +129,15 @@ public class TaskService {
     public ResponseEntity<?> update(User user, Long id, TaskDTO taskDTO) throws NotValidTaskPriorityException,
             NotValidTaskStatusException, UserDoesNotExistException, OptimisticLockException, TaskDoesNotExistException {
         return taskRepository.findById(id).map(task -> {
-            if (!task.getVersion().equals(taskDTO.getVersion())) {
+            Integer dtoVersion = taskDTO.getVersion();
+            if (!task.getVersion().equals(dtoVersion)) {
                 throw new OptimisticLockException(
                         "Task already modified"
                 );
             }
             taskDTO.setId(id);
             taskDTO.setCreatedBy(task.getCreatedBy());
+            taskDTO.setVersion(task.getVersion());
             taskDTO.setUpdatedBy(user.getEmail());
             taskDTO.setTaskOrder(task.getTaskOrder());
             try {
@@ -148,6 +151,11 @@ public class TaskService {
     public ResponseEntity<?> dragTask(User user, DragTaskDTO dragTaskDTO) throws
             NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
         return taskRepository.findById(dragTaskDTO.getTaskId()).map(task -> {
+            if (!task.getVersion().equals(dragTaskDTO.getTaskVersion())) {
+                throw new OptimisticLockException(
+                        "Task already modified"
+                );
+            }
             TaskStatus prevTaskStatus = task.getTaskStatus();
             TaskStatus taskStatus = this.taskConverter.convertStringToTaskStatus(dragTaskDTO.getTaskStatus());
             task.setTaskStatus(taskStatus);
@@ -197,15 +205,16 @@ public class TaskService {
     }
 
     @Transactional
-    public ResponseEntity<?> delete(Long id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+    public ResponseEntity<?> delete(@NonNull Long id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
         return taskRepository.findById(id).map(task -> {
             taskRepository.deleteExistingUsersFromTask(id);
-            int result = taskRepository.deleteByIdAndVersion(id, version);
-            if (result == 0) {
+            if (!task.getVersion().equals(version)) {
                 throw new OptimisticLockException(
                         "Task already modified"
                 );
             }
+            taskRepository.deleteById(id);
+
             taskRepository.decreaseTaskOrder(task.getTaskOrder(), task.getTaskStatus().ordinal());
            return ResponseEntity.ok().build();
         }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));

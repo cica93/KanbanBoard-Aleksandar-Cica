@@ -11,7 +11,6 @@ import com.example.Kanban.Board.model.Task;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-
     @Modifying
     @Transactional
     @Query(value ="DELETE FROM user_task WHERE task_id = ?1", nativeQuery=true)
@@ -32,8 +31,4 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query(value = "INSERT INTO user_task (task_id, user_id) values (?1, ?2)", nativeQuery = true)
     void assignUserToTask(Long taskId, Long userId);
 
-    @Modifying
-    @Transactional
-    @Query(value = "DELETE FROM Task t WHERE t.id = ?1 AND t.version = ?2", nativeQuery = true)
-    int deleteByIdAndVersion(Long id, Integer version);
 }

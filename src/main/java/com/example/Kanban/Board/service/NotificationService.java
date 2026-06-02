@@ -13,6 +13,6 @@ public class NotificationService {
     }
 
     public void sendEntityUpdate(Object payload) {
-        messagingTemplate.convertAndSend("/tasks", payload);
+        messagingTemplate.convertAndSend("/topic/updates", payload);
     }
 }

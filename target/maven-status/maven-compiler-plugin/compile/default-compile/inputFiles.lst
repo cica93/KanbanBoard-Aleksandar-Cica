@@ -3,6 +3,8 @@
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/annotations/Password.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/annotations/PasswordValidator.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/BCryptPassword.java
+/Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/JwtChannelInterceptor.java
+/Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/JwtService.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/LimitingRequestFilter.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/Security.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/WebSocketConfig.java
@@ -13,12 +15,14 @@
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/controller/UserController.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/daoHelper/ResultSetProcessor.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/daoHelper/TaskDTOResultSetExtractor.java
+/Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/dto/DragTaskDTO.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/dto/TaskDTO.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/dto/UserDTO.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/exceptions/BadCredentialsException.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/exceptions/ForbiddenMethodException.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/exceptions/NotValidTaskPriorityException.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/exceptions/NotValidTaskStatusException.java
+/Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/exceptions/TaskDoesNotExistException.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/exceptions/UserDoesNotExistException.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/interceptors/ArgResolvers.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/interceptors/GraphQLUserInterceptor.java

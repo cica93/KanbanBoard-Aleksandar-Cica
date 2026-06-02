@@ -12,6 +12,8 @@ import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 
+import jakarta.persistence.OptimisticLockException;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -28,7 +30,8 @@ public class GlobalExceptionHandler {
         TaskDoesNotExistException.class,
         NotValidTaskStatusException.class,
         NotValidTaskPriorityException.class,
-        BadCredentialsException.class
+        BadCredentialsException.class,
+        OptimisticLockException.class
     })
     public ResponseEntity<Object> handleUserDoesNotExistExceptionException(RuntimeException ex) {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
