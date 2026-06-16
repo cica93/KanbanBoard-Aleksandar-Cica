@@ -1,6 +1,7 @@
 package com.example.Kanban.Board.interceptors;
 
 import org.springframework.core.MethodParameter;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -21,7 +22,7 @@ public class UserResolver implements HandlerMethodArgumentResolver {
     }
 
     @Override
-    public boolean supportsParameter(MethodParameter parameter) {
+    public boolean supportsParameter(@NonNull MethodParameter parameter) {
         return parameter.getParameterType().equals(User.class)
                 && parameter.getParameterAnnotation(RequestBody.class) == null;
     }

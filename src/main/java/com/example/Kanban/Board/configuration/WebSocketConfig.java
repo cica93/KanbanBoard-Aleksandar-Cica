@@ -2,7 +2,6 @@ package com.example.Kanban.Board.configuration;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -22,9 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-
-    @Value("${frontend.app.port}")
-    private Integer port;
 
     @Override
     public void configureMessageBroker(@NonNull MessageBrokerRegistry registry) {
