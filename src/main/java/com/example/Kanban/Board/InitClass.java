@@ -20,9 +20,7 @@ import jakarta.annotation.PostConstruct;
 public class InitClass {
 
     private final TaskService taskService;
-
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
 
     public InitClass(PasswordEncoder passwordEncoder, TaskService taskService, UserRepository userRepository) {

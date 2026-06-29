@@ -28,21 +28,22 @@ public class UserService {
     }
 
     public ResponseEntity<Page<UserDTO>> get(Pageable pageable, String keyword) {
-         Specification<User> spec = (root, query, criteriaBuilder) -> {
-			List<Predicate> predicates = new ArrayList<>();
-             if (keyword != null && !keyword.isBlank()) {
+        Specification<User> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (keyword != null && !keyword.isBlank()) {
                 String regex = ("%" + keyword + "%").toLowerCase();
-				Predicate whereClause = criteriaBuilder.or(criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), regex)
-						, criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), regex));
-				predicates.add(whereClause);
-			}
-			return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-         };
-     
+                Predicate whereClause = criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), regex),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), regex));
+                predicates.add(whereClause);
+            }
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
+
         Page<UserDTO> data = userRepository.findAll(spec, pageable).map(u -> userConverter.convertModelToDTOModel(u));
         return ResponseEntity.ok(data);
     }
-
+    
     public ResponseEntity<Boolean> hasMail(String email) {
         return ResponseEntity.ok(userRepository.findByEmail(email).isPresent());
     }
