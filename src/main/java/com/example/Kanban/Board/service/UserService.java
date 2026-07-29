@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import com.example.Kanban.Board.dto.UserDTO;
@@ -27,7 +28,7 @@ public class UserService {
         this.userConverter = userConverter;
     }
 
-    public ResponseEntity<Page<UserDTO>> get(Pageable pageable, String keyword) {
+    public ResponseEntity<Page<UserDTO>> get(@NonNull Pageable pageable, String keyword) {
         Specification<User> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (keyword != null && !keyword.isBlank()) {

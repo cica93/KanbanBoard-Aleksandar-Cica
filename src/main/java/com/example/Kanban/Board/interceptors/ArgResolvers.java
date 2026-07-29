@@ -18,7 +18,6 @@ public class ArgResolvers implements WebMvcConfigurer {
 
     @Override
     public void addArgumentResolvers(@NonNull List<HandlerMethodArgumentResolver> resolvers) {
-        resolvers.add(new PageRequestResolver());
         resolvers.add(new UserResolver(userRepository));
     }
 }

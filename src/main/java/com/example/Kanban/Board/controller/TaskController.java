@@ -2,8 +2,9 @@ package com.example.Kanban.Board.controller;
 
 import java.util.List;
 
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +25,8 @@ import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
 
+import org.springframework.data.domain.Sort;
+
 import jakarta.persistence.OptimisticLockException;
 
 @RestController
@@ -36,9 +39,14 @@ public class TaskController {
     }
     
     @GetMapping
-    public ResponseEntity<List<TaskDTO>> get(User user, Pageable pageable,
-            @RequestParam(name = "description", required = false) String description) {
-        return taskService.get(pageable, description);
+    public ResponseEntity<List<TaskDTO>> get(
+            @RequestParam(name = "description", required = false) String description,
+            @RequestParam(name = "order", required = false) String order,
+            @RequestParam(name = "offset", required = false) Integer offset,
+            @RequestParam(name = "column", required = false) String column,
+            @RequestParam(name = "limit", required = false) Integer limit) {
+            Sort sort = Sort.by("desc".equalsIgnoreCase(order) ? Sort.Direction.DESC : Sort.Direction.ASC, column);
+        return taskService.get(PageRequest.of(offset / limit, limit, sort), description);
     }
 
     @GetMapping("/{id}")
@@ -71,7 +79,7 @@ public class TaskController {
     }
     
     @DeleteMapping("/{id}/{version}")
-    public ResponseEntity<?> delete(User user, @PathVariable Long id, @PathVariable Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+    public ResponseEntity<?> delete(User user, @PathVariable @NonNull Long id, @PathVariable Integer version) throws TaskDoesNotExistException, OptimisticLockException {
         return taskService.delete(id, version);
     }
 
