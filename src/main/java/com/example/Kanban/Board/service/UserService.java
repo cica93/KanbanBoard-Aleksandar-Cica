@@ -1,51 +1,39 @@
 package com.example.Kanban.Board.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Service;
-
-import com.example.Kanban.Board.dto.UserDTO;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.utilities.UserConverter;
 
-import jakarta.persistence.criteria.Predicate;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.core.Response;
 
-@Service
+@ApplicationScoped
 public class UserService {
-    
+
     private final UserConverter userConverter;
+
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository, UserConverter userConverter) {
-        this.userRepository = userRepository;
+    public UserService(UserConverter userConverter, UserRepository userRepository) {
         this.userConverter = userConverter;
+        this.userRepository = userRepository;   
     }
 
-    public ResponseEntity<Page<UserDTO>> get(@NonNull Pageable pageable, String keyword) {
-        Specification<User> spec = (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            if (keyword != null && !keyword.isBlank()) {
-                String regex = ("%" + keyword + "%").toLowerCase();
-                Predicate whereClause = criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), regex),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), regex));
-                predicates.add(whereClause);
-            }
-            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-        };
-
-        Page<UserDTO> data = userRepository.findAll(spec, pageable).map(u -> userConverter.convertModelToDTOModel(u));
-        return ResponseEntity.ok(data);
+    public Response get(Page page, Sort sort, String keyword) {
+        PanacheQuery<User> data;
+        if (keyword != null && !keyword.isBlank()) {
+            data = userRepository.findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(keyword, keyword, sort);
+        } else {
+            data = userRepository.findAll(sort);
+        }
+        data.page(page);
+        return Response.ok(userConverter.convertListOfModelsToDTOModel(data.list())).build();
     }
-    
-    public ResponseEntity<Boolean> hasMail(String email) {
-        return ResponseEntity.ok(userRepository.findByEmail(email).isPresent());
+
+    public Response hasMail(String email) {
+        return Response.ok(userRepository.findByEmail(email).isPresent()).build();
     }
 }

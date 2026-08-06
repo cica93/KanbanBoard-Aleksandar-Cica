@@ -3,8 +3,7 @@ package com.example.Kanban.Board;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+import com.example.Kanban.Board.configuration.PasswordEncoder;
 
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
@@ -15,18 +14,22 @@ import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.service.TaskService;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.ws.rs.ext.Provider;
 
-@Component
+@Provider
 public class InitClass {
 
+
     private final TaskService taskService;
+
     private final UserRepository userRepository;
+    
     private final PasswordEncoder passwordEncoder;
 
-    public InitClass(PasswordEncoder passwordEncoder, TaskService taskService, UserRepository userRepository) {
-        this.passwordEncoder = passwordEncoder;
+    public InitClass(TaskService taskService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.taskService = taskService;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -69,7 +72,7 @@ public class InitClass {
           task.setUsers(users);
           task.setCreatedBy(users.get(0).getEmail());
           try {
-            taskService.saveTask(task);
+            taskService.saveTask(users.get(0), task);
         } catch (UserDoesNotExistException e) {
         }
       }

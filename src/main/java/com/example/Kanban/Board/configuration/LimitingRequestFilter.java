@@ -1,76 +1,83 @@
-package com.example.Kanban.Board.configuration;
+// package com.example.Kanban.Board.configuration;
 
 
-import java.io.IOException;
-import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
+// import java.io.IOException;
+// import java.time.Duration;
+// import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+// import org.eclipse.microprofile.config.inject.ConfigProperty;
+// import jakarta.inject.Inject;
 
-import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.Bucket;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+// import org.springframework.lang.NonNull;
+// import org.springframework.web.filter.OncePerRequestFilter;
 
-@Component
-public class LimitingRequestFilter extends OncePerRequestFilter {
+// import io.github.bucket4j.Bandwidth;
+// import io.github.bucket4j.Bucket;
+// import jakarta.servlet.FilterChain;
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
 
-    @Value("${requests.max.requests.in.one.minute}")
-    private Integer requestsInOneMinute;
+// import jakarta.ws.rs.ext.Provider;
 
-    @Value("${app.environment}")
-    private String appEnvironment;
+// @Provider
+// public class LimitingRequestFilter extends OncePerRequestFilter {
 
-    @Value("${server.port}")
-    private Integer serverPort;
+//     @Inject
+//     @ConfigProperty(name = "requests.max.requests.in.one.minute")
+//     private Integer requestsInOneMinute;
 
-    @Value("${spring.graphql.path}")
-    private String graphqlPath;
+//     @Inject
+//     @ConfigProperty(name = "app.environment")
+//     private String appEnvironment;
 
-    private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
+//     @Inject
+//     @ConfigProperty(name = "server.port")
+//     private Integer serverPort;
 
-    private Bucket createNewBucket() {
-        final Bandwidth limit = Bandwidth.builder()
-                .capacity(requestsInOneMinute)
-                .refillGreedy(requestsInOneMinute, Duration.ofMinutes(1))
-                .build();
+//     @Inject
+//     @ConfigProperty(name = "spring.graphql.path")
+//     private String graphqlPath;
 
-        return Bucket.builder()
-                .addLimit(limit)
-                .build();
-    }
+//     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
-        String url = request.getRequestURL().toString();
+//     private Bucket createNewBucket() {
+//         final Bandwidth limit = Bandwidth.builder()
+//                 .capacity(requestsInOneMinute)
+//                 .refillGreedy(requestsInOneMinute, Duration.ofMinutes(1))
+//                 .build();
 
-        // Explicitly allow WebSocket handshake and SockJS info paths through
-        if (url.startsWith("http://" + appEnvironment + ":" + serverPort + "/ws")
-                || url.startsWith("http://" + appEnvironment + ":" + serverPort + "/ws/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+//         return Bucket.builder()
+//                 .addLimit(limit)
+//                 .build();
+//     }
 
-        if (url.startsWith("http://" + appEnvironment + ":" + serverPort + "/api") || url.contains(graphqlPath)) {
-            String remoteAddr = request.getRemoteAddr();
+//     @Override
+//     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+//             @NonNull FilterChain filterChain) throws ServletException, IOException {
+//         String url = request.getRequestURL().toString();
 
-            final Bucket bucket = buckets.computeIfAbsent(remoteAddr, k -> createNewBucket());
+//         // Explicitly allow WebSocket handshake and SockJS info paths through
+//         if (url.startsWith("http://" + appEnvironment + ":" + serverPort + "/ws")
+//                 || url.startsWith("http://" + appEnvironment + ":" + serverPort + "/ws/")) {
+//             filterChain.doFilter(request, response);
+//             return;
+//         }
 
-            if (bucket.tryConsume(1)) {
-                filterChain.doFilter(request, response);
-            } else {
-                response.setStatus(429);
-                response.getWriter().write("Too many requests");
-            }
-        } else {
-            filterChain.doFilter(request, response);
-        }
+//         if (url.startsWith("http://" + appEnvironment + ":" + serverPort + "/api") || url.contains(graphqlPath)) {
+//             String remoteAddr = request.getRemoteAddr();
+
+//             final Bucket bucket = buckets.computeIfAbsent(remoteAddr, k -> createNewBucket());
+
+//             if (bucket.tryConsume(1)) {
+//                 filterChain.doFilter(request, response);
+//             } else {
+//                 response.setStatus(429);
+//                 response.getWriter().write("Too many requests");
+//             }
+//         } else {
+//             filterChain.doFilter(request, response);
+//         }
    
-    }
-}
+//     }
+// }

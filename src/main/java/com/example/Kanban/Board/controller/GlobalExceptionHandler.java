@@ -1,9 +1,9 @@
 package com.example.Kanban.Board.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+import jakarta.persistence.OptimisticLockException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
 import com.example.Kanban.Board.exceptions.BadCredentialsException;
 import com.example.Kanban.Board.exceptions.ForbiddenMethodException;
@@ -12,44 +12,60 @@ import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 
-import jakarta.persistence.OptimisticLockException;
 
-@ControllerAdvice
-public class GlobalExceptionHandler {
+@Provider
+public class GlobalExceptionHandler
+        implements ExceptionMapper<Exception> {
 
 
-    @ExceptionHandler(ForbiddenMethodException.class)
-    public ResponseEntity<Object> handleForbiddenMethodException(Exception ex) {
-        return new ResponseEntity<>(new ErrorResponse(ex.getMessage()),
-                HttpStatus.FORBIDDEN);
+    @Override
+    public Response toResponse(Exception ex) {
+
+
+        if (ex instanceof ForbiddenMethodException) {
+
+            return Response
+                    .status(Response.Status.FORBIDDEN)
+                    .entity(new ErrorResponse(ex.getMessage()))
+                    .build();
+        }
+
+
+        if (ex instanceof UserDoesNotExistException ||
+            ex instanceof TaskDoesNotExistException ||
+            ex instanceof NotValidTaskStatusException ||
+            ex instanceof NotValidTaskPriorityException ||
+            ex instanceof BadCredentialsException ||
+            ex instanceof OptimisticLockException) {
+
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse(ex.getMessage()))
+                    .build();
+        }
+
+
+        return Response
+                .status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(
+                    new ErrorResponse(
+                        "An unexpected error occurred."
+                    )
+                )
+                .build();
     }
 
 
-    @ExceptionHandler(exception = {
-        UserDoesNotExistException.class,
-        TaskDoesNotExistException.class,
-        NotValidTaskStatusException.class,
-        NotValidTaskPriorityException.class,
-        BadCredentialsException.class,
-        OptimisticLockException.class
-    })
-    public ResponseEntity<Object> handleUserDoesNotExistExceptionException(RuntimeException ex) {
-        return new ResponseEntity<>(new ErrorResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
-    }
 
-    
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGenericException(Exception ex) {
-        return new ResponseEntity<>(new ErrorResponse( "An unexpected error occurred."), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    static class ErrorResponse {
+    public static class ErrorResponse {
 
         private final String message;
+
 
         public ErrorResponse(String message) {
             this.message = message;
         }
+
 
         public String getMessage() {
             return message;

@@ -6,12 +6,16 @@ import java.util.List;
 import com.example.Kanban.Board.annotations.Password;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.ColumnResult;
+import jakarta.persistence.ConstructorResult;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.NamedNativeQuery;
+import jakarta.persistence.SqlResultSetMapping;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
@@ -20,8 +24,22 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"email"})})
+@Table(name ="user", uniqueConstraints = {
+@UniqueConstraint(columnNames = { "email" }) })
+    @SqlResultSetMapping(
+        name = "userMapper",
+        classes = {
+            @ConstructorResult(
+            targetClass = User.class,
+                columns = {
+                    @ColumnResult(name = "id", type = Long.class),
+                    @ColumnResult(name = "email", type = String.class),
+                    @ColumnResult(name = "token", type = String.class),
+                })})
+@NamedNativeQuery(
+        name = "findByToken",
+        query = "SELECT id, email, token FROM user WHERE token = :token limit 1",
+        resultSetMapping = "userMapper")
 public class User implements Serializable {
 
     @Id
@@ -38,6 +56,7 @@ public class User implements Serializable {
     @NotNull(message = "Full Name is required")
     @NotBlank(message = "Full Name is required")
     @Size(min = 3, max = 30, message = "Name can hve max 30 characters")
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
     private String token;
@@ -46,7 +65,7 @@ public class User implements Serializable {
     private String password;
 
     @Lob()
-    @Column(length = 10484760)
+    @Column(name = "image", length = 10484760)
     private byte[] image;
 
     @ManyToMany(mappedBy = "users")

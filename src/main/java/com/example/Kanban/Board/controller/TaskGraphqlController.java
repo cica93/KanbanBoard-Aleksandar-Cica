@@ -1,81 +1,84 @@
 package com.example.Kanban.Board.controller;
-
+import java.sql.SQLException;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.ContextValue;
-import org.springframework.graphql.data.method.annotation.MutationMapping;
-import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.stereotype.Controller;
+import org.eclipse.microprofile.graphql.DefaultValue;
+import org.eclipse.microprofile.graphql.GraphQLApi;
+import org.eclipse.microprofile.graphql.Mutation;
+import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.Query;
 
+import com.example.Kanban.Board.annotations.CurrentUser;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
-import com.example.Kanban.Board.dto.UserDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
+import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
-import com.example.Kanban.Board.service.UserService;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import jakarta.persistence.OptimisticLockException;
 
-@Controller
+@GraphQLApi
+@ApplicationScoped
 public class TaskGraphqlController {
 
     private final TaskService taskService;
-    private final UserService userService;
 
-    @Autowired
-    public TaskGraphqlController(UserService userService, TaskService taskService) {
+    @Inject
+    @CurrentUser
+    Instance<User> currentUser;
+
+    public TaskGraphqlController(TaskService taskService) {
         this.taskService = taskService;
-        this.userService = userService;
     }
 
-    @SuppressWarnings("null")
-    @QueryMapping
-    public List<UserDTO> getUsers() {
-        Sort sort = Sort.by(Sort.Direction.DESC, "id");
-        PageRequest pageRequest = PageRequest.of(1, 20, sort);
-        return userService.get(pageRequest, "").getBody().getContent();
-    }
 
-    @MutationMapping
-    public Object createTask(@ContextValue(name = "user") User user, @Argument("task") TaskDTO taskDTO)
+    @Mutation("createTask")
+    public Task createTask(@Name("task") TaskDTO taskDTO)
             throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
-        return taskService.create(user, taskDTO).getBody();
+        return (Task) taskService.create(currentUser.get(), taskDTO).getEntity();
     }
 
-    @MutationMapping
-    public Object dragTask(@ContextValue(name = "user") User user, @Argument("dragTask") DragTaskDTO dragTaskDTO) throws NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskService.dragTask(user, dragTaskDTO).getBody();
+    @Mutation("dragTask")
+    public Task dragTask(@Name("taskId") Integer taskId, @Name("taskStatus") String taskStatus, @Name("taskOrder") Integer taskOrder, @Name("taskVersion") Integer taskVersion)
+            throws NotValidTaskStatusException, TaskDoesNotExistException {
+        DragTaskDTO dragTaskDTO = new DragTaskDTO();
+        dragTaskDTO.setTaskId(taskId.longValue());
+        dragTaskDTO.setTaskVersion(taskVersion);
+        dragTaskDTO.setTaskStatus(taskStatus);
+        dragTaskDTO.setTaskOrder(taskOrder);
+        User user = new User();
+        user.setEmail("pera@gmail.com");
+        Task task = (Task) taskService.dragTask(user, dragTaskDTO).getEntity();
+        return task;
     }
 
-    @MutationMapping
-    public Object updateTask(@ContextValue(name = "user") User user, @Argument Long id, @Argument("task") TaskDTO task) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskService.update(user, id, task).getBody();
+    @Mutation("updateTask")
+    public Task updateTask(@Name("id") Integer id, @Name("task") TaskDTO task) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
+        return (Task) taskService.update(currentUser.get(), id.longValue(), task).getEntity();
     }
 
-    @MutationMapping
-    public Object deleteTask(@ContextValue(name = "user") User user, @Argument Long id, @Argument Integer version) throws TaskDoesNotExistException, OptimisticLockException {
-        return taskService.delete(id, version).getBody();
+    @Mutation("deleteTask")
+    public TaskDTO deleteTask(@Name("id") Integer id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+        return (TaskDTO) taskService.delete(id.longValue(), version).getEntity();
     }
 
-     @QueryMapping
-    public TaskDTO getTaskById(@Argument Long id) throws TaskDoesNotExistException {
-         return taskService.getById(id).getBody();
+    @Query("getTaskById")
+    public Task getTaskById(@Name("id") Integer id) throws TaskDoesNotExistException {
+        return (Task) taskService.getById(id.longValue()).getEntity();
      }
 
-    @QueryMapping
-    public List<TaskDTO> getTasks(@Argument Integer page, @Argument Integer pageSize,
-                @Argument List<String> columns, @Argument String order, @Argument String description) {
-                    Sort sort = Sort.by("desc".equalsIgnoreCase(order) ? Sort.Direction.DESC : Sort.Direction.ASC, columns.stream().toArray(String[]::new));
-                    PageRequest pageRequest = PageRequest.of(page, pageSize, sort);
-        return taskService.get(pageRequest, description).getBody();
+    @Query("getTasks")
+    @SuppressWarnings("unchecked")
+    public List<TaskDTO> getTasks(String description, @DefaultValue("20") Integer limit, @DefaultValue("0") Integer offset) throws SQLException {
+        Object entity = taskService.get(limit, offset, description).getEntity();
+        return (List<TaskDTO>) entity;
     }
 
 

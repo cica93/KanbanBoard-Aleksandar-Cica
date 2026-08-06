@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.hibernate.annotations.ColumnDefault;
 
-import com.example.Kanban.Board.utilities.TaskEntityListener;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -18,12 +16,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import com.example.Kanban.Board.utilities.TaskEntityListener;
+
 @Entity
 @EntityListeners(TaskEntityListener.class)
+@Table(name = "task")
 public class Task implements Serializable {
 
     @Id
@@ -43,19 +45,21 @@ public class Task implements Serializable {
     private String description;
 
     @Enumerated(EnumType.ORDINAL)
-    @Column(nullable = true)
+    @Column(nullable = true, name = "task_status")
     private TaskStatus taskStatus;
 
     @Enumerated(EnumType.ORDINAL)
-    @Column(nullable = false)
+    @Column(nullable = false, name = "task_priority")
     private TaskPriority taskPriority;
 
+    @Column(name = "created_by")
     private String createdBy;
 
+    @Column(name = "updated_by")
     private String updatedBy;
 
     @ColumnDefault("0")
-    @Column(nullable = false)
+    @Column(nullable = false, name = "task_order")
     private Integer taskOrder;
 
     @ManyToMany

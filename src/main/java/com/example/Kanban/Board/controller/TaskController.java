@@ -1,21 +1,23 @@
 package com.example.Kanban.Board.controller;
 
-import java.util.List;
+import jakarta.persistence.OptimisticLockException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import java.sql.SQLException;
 
+import com.example.Kanban.Board.annotations.CurrentUser;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
@@ -25,62 +27,111 @@ import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
 
-import org.springframework.data.domain.Sort;
 
-import jakarta.persistence.OptimisticLockException;
-
-@RestController
-@RequestMapping("/api/tasks")
+@Path("/api/tasks")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class TaskController {
-    
+
     private final TaskService taskService;
-    public TaskController(TaskService taskService) {
+
+    private final User currentUser;
+
+    public TaskController(@CurrentUser User currentUser, TaskService taskService) {
+        this.currentUser = currentUser;
         this.taskService = taskService;
     }
-    
-    @GetMapping
-    public ResponseEntity<List<TaskDTO>> get(
-            @RequestParam(name = "description", required = false) String description,
-            @RequestParam(name = "order", required = false) String order,
-            @RequestParam(name = "offset", required = false) Integer offset,
-            @RequestParam(name = "column", required = false) String column,
-            @RequestParam(name = "limit", required = false) Integer limit) {
-            Sort sort = Sort.by("desc".equalsIgnoreCase(order) ? Sort.Direction.DESC : Sort.Direction.ASC, column);
-        return taskService.get(PageRequest.of(offset / limit, limit, sort), description);
+
+
+    @GET
+    public Response get(
+            @QueryParam("description") String description,
+            @QueryParam("offset") @DefaultValue("0") Integer offset,
+            @QueryParam("limit") @DefaultValue("10") Integer limit) throws SQLException {
+        return taskService.get(limit, offset, description); 
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<TaskDTO> getById(User user, @PathVariable Long id) throws TaskDoesNotExistException {
+    @GET
+    @Path("/{id}")
+    public Response getById(
+            @PathParam("id") Long id)
+            throws TaskDoesNotExistException {
         return taskService.getById(id);
     }
-    
-    @PostMapping()
-    public ResponseEntity<?> create(User user, @RequestBody TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
-        return taskService.create(user, taskDTO);
-    }
-    
-    @PutMapping("/{id}")
-    public ResponseEntity<?> create(User user, @PathVariable Long id, @RequestBody TaskDTO taskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException,
-            TaskDoesNotExistException {
-        return taskService.update(user, id, taskDTO);
-    }
-    
-    @PutMapping("/drag")
-    public ResponseEntity<?> dragTask(User user, @RequestBody DragTaskDTO dragTaskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskService.dragTask(user, dragTaskDTO);
+
+    @POST
+    public Response create(TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
+        return taskService.create(
+                currentUser,
+                taskDTO
+        );
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> patch(User user, @PathVariable Long id, @RequestBody TaskDTO taskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskService.patch(user, id, taskDTO);
-    }
-    
-    @DeleteMapping("/{id}/{version}")
-    public ResponseEntity<?> delete(User user, @PathVariable @NonNull Long id, @PathVariable Integer version) throws TaskDoesNotExistException, OptimisticLockException {
-        return taskService.delete(id, version);
+    @PUT
+    @Path("/{id}")
+    public Response update(
+            @PathParam("id") Long id,
+            TaskDTO taskDTO)
+            throws NotValidTaskPriorityException,
+                   NotValidTaskStatusException,
+                   UserDoesNotExistException,
+                   TaskDoesNotExistException {
+
+
+        return taskService.update(
+                currentUser,
+                id,
+                taskDTO
+        );
     }
 
+
+
+    @PUT
+    @Path("/drag")
+    public Response dragTask(
+            DragTaskDTO dragTaskDTO)
+            throws NotValidTaskStatusException,TaskDoesNotExistException {
+        return taskService.dragTask(
+                currentUser,
+                dragTaskDTO
+        );
+    }
+
+
+
+    @PATCH
+    @Path("/{id}")
+    public Response patch(
+            @PathParam("id") Long id,
+            TaskDTO taskDTO)
+            throws NotValidTaskPriorityException,
+                   NotValidTaskStatusException,
+                   UserDoesNotExistException,
+                   TaskDoesNotExistException {
+
+
+        return taskService.patch(
+                currentUser,
+                id,
+                taskDTO
+        );
+    }
+
+
+
+    @DELETE
+    @Path("/{id}/{version}")
+    public Response delete(
+            @PathParam("id") Long id,
+            @PathParam("version") Integer version)
+            throws TaskDoesNotExistException,
+                   OptimisticLockException {
+
+
+        return taskService.delete(
+                id,
+                version
+        );
+    }
 }

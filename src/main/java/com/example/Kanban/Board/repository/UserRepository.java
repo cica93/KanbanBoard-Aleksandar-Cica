@@ -1,30 +1,57 @@
 package com.example.Kanban.Board.repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 
 import com.example.Kanban.Board.model.User;
 
-@Repository
-public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import io.quarkus.panache.common.Sort;
 
-    Optional<User> findByEmail(String email);
+@ApplicationScoped
+public class UserRepository implements PanacheRepository<User> {
 
-    Optional<User> findByToken(String token);
+    public Optional<User> findByEmail(String email) {
+        return find("email", email).firstResultOptional();
+    }
 
-    @Modifying
+     public Optional<User> findByToken(String token) {
+        return find("token", token).firstResultOptional();
+    }
+
+    public PanacheQuery<User> findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(
+            String email,
+            String fullName, Sort sort) {
+
+        return find(
+            "LOWER(email) LIKE ?1 OR LOWER(fullName) LIKE ?2", sort,
+            "%" + email.toLowerCase() + "%",
+            "%" + fullName.toLowerCase() + "%"
+        );
+    }
+
     @Transactional
-    @Query("UPDATE User u SET u.token = ?2 WHERE u.id = ?1")
-    int saveToken(Long id, String token);
+    public int saveToken(Long id, String token) {
 
-    Long countByIdIn(Set<Long> ids);
+        return update(
+                "token = ?1 where id = ?2",
+                token,
+                id);
+    }
+    
+    @Transactional
+    public User save(User user) {
+        persist(user);
+        flush();
+        return user;
+    }
 
+    public long countByIdIn(Set<Long> ids) {
+
+        return count("id in ?1", ids);
+    }
 }

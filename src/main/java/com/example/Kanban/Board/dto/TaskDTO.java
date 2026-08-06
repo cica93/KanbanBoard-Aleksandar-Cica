@@ -2,6 +2,8 @@ package com.example.Kanban.Board.dto;
 
 import java.util.List;
 
+import com.example.Kanban.Board.model.Task;
+
 public class TaskDTO {
 
     private Long id;
@@ -14,6 +16,22 @@ public class TaskDTO {
     private String createdBy;
     private String updatedBy;
     private Integer taskOrder;
+
+    public TaskDTO() {
+    }
+    
+    
+    public TaskDTO(Task task) {
+        this.id = task.getId();
+        this.version = task.getVersion();
+        this.title = task.getTitle();
+        this.description = task.getDescription();
+        this.taskStatus = task.getTaskStatus() != null ? task.getTaskStatus().name() : null;
+        this.taskPriority = task.getTaskPriority() != null ? task.getTaskPriority().name() : null;
+        this.createdBy = task.getCreatedBy();
+        this.updatedBy = task.getUpdatedBy();
+        this.taskOrder = task.getTaskOrder();
+    }
 
     public List<UserDTO> getUsers() {
         return users;

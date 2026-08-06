@@ -1,15 +1,12 @@
 package com.example.Kanban.Board;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ImportResource;
+import io.quarkus.runtime.Quarkus;
+import io.quarkus.runtime.annotations.QuarkusMain;
 
-@SpringBootApplication
-@ImportResource("beans.xml")
+@QuarkusMain
 public class KanbanBoardApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(KanbanBoardApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        Quarkus.run(args);
+    }
 }

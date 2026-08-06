@@ -1,53 +1,54 @@
-package com.example.Kanban.Board.configuration;
+// package com.example.Kanban.Board.configuration;
 
-import org.springframework.lang.NonNull;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.simp.stomp.StompCommand;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.messaging.support.MessageHeaderAccessor;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
+// import org.springframework.lang.NonNull;
+// import org.springframework.messaging.Message;
+// import org.springframework.messaging.MessageChannel;
+// import org.springframework.messaging.simp.stomp.StompCommand;
+// import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+// import org.springframework.messaging.support.ChannelInterceptor;
+// import org.springframework.messaging.support.MessageHeaderAccessor;
+// import org.springframework.security.core.Authentication;
 
-@Component
-public class JwtChannelInterceptor implements ChannelInterceptor {
+// import jakarta.ws.rs.ext.Provider;
 
-    private final JwtService jwtService;
+// @Provider
+// public class JwtChannelInterceptor implements ChannelInterceptor {
 
-    public JwtChannelInterceptor(JwtService jwtService) {
-        this.jwtService = jwtService;
-    }
+//     private final JwtService jwtService;
 
-    @Override
-    public Message<?> preSend(
-            @NonNull Message<?> message,
-            @NonNull MessageChannel channel
-    ) {
+//     public JwtChannelInterceptor(JwtService jwtService) {
+//         this.jwtService = jwtService;
+//     }
 
-        StompHeaderAccessor accessor
-                = MessageHeaderAccessor.getAccessor(
-                        message,
-                        StompHeaderAccessor.class
-                );
+//     @Override
+//     public Message<?> preSend(
+//             @NonNull Message<?> message,
+//             @NonNull MessageChannel channel
+//     ) {
 
-        if (accessor != null && accessor.getCommand()!= null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+//         StompHeaderAccessor accessor
+//                 = MessageHeaderAccessor.getAccessor(
+//                         message,
+//                         StompHeaderAccessor.class
+//                 );
 
-            String authHeader
-                    = accessor.getFirstNativeHeader("Authorization");
+//         if (accessor != null && accessor.getCommand()!= null && StompCommand.CONNECT.equals(accessor.getCommand())) {
 
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("Missing JWT token");
-            }
+//             String authHeader
+//                     = accessor.getFirstNativeHeader("Authorization");
 
-            String token = authHeader.substring(7);
+//             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//                 throw new IllegalArgumentException("Missing JWT token");
+//             }
 
-            Authentication authentication
-                    = jwtService.parseToken(token);
+//             String token = authHeader.substring(7);
 
-            accessor.setUser(authentication);
-        }
+//             Authentication authentication
+//                     = jwtService.parseToken(token);
 
-        return message;
-    }
-}
+//             accessor.setUser(authentication);
+//         }
+
+//         return message;
+//     }
+// }

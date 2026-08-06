@@ -1,18 +1,11 @@
 package com.example.Kanban.Board.service;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Service;
-
-import com.example.Kanban.Board.daoHelper.TaskDTOResultSetExtractor;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
@@ -25,14 +18,17 @@ import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.TaskRepository;
 import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.utilities.ModelValidator;
+import com.example.Kanban.Board.utilities.NotificationService;
 import com.example.Kanban.Board.utilities.TaskConverter;
 import com.example.Kanban.Board.utilities.UserConverter;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Validator;
+import jakarta.ws.rs.core.Response;
 
-@Service
+@ApplicationScoped
 public class TaskService {
 
     private final TaskRepository taskRepository;
@@ -41,57 +37,46 @@ public class TaskService {
 
     private final Validator validator;
 
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
     private final TaskConverter taskConverter;
-    
+
     private final UserConverter userConverter;
 
-    public TaskService(
-            TaskRepository taskRepository,
+    public TaskService(TaskRepository taskRepository,
             UserRepository userRepository,
             Validator validator,
-            NamedParameterJdbcTemplate namedParameterJdbcTemplate,
             TaskConverter taskConverter,
-            UserConverter userConverter
-    ) {
+            UserConverter userConverter,
+            NotificationService notificationService) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.validator = validator;
-        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         this.taskConverter = taskConverter;
         this.userConverter = userConverter;
     }
 
-    public ResponseEntity<List<TaskDTO>> get(Pageable pageable, String description) {
-        String q = "WITH all_tasks as (SELECT * , ROW_NUMBER() OVER (PARTITION BY task_status ORDER BY task_order) AS int_row "
-                + "FROM task WHERE (:description IS NULL OR LOWER(description) like LOWER(CONCAT('%', :description, '%')) "
-                + "OR LOWER(title) like LOWER(CONCAT('%', :description, '%')))) "
-                + "SELECT t.id, t.task_priority, t.task_order, t.task_status, t.created_by, t.updated_by, t.version, t.description, t.title, u.id as user_id, u.email, "
-                + "u.full_name, u.image from all_tasks t LEFT JOIN user_task ut on ut.task_id = t.id "
-                + "LEFT JOIN user u on u.id = ut.user_id WHERE t.int_row >= :start AND t.int_row < :end ORDER BY t.int_row";
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("description", description);
-        params.addValue("end", pageable.getOffset() + pageable.getPageSize() + 1);
-        params.addValue("start", pageable.getOffset() + 1);
-        List<TaskDTO> result = namedParameterJdbcTemplate.query(q, params, new TaskDTOResultSetExtractor());
-        return ResponseEntity.ok(result);
+    @Transactional
+    public Response get(Integer limit, Integer offset, String description) throws SQLException {
+        List<TaskDTO> result = taskRepository.getTasks(limit, offset, description);
+        return Response.ok(result).build();
     }
 
-    public ResponseEntity<TaskDTO> getById(Long id) throws TaskDoesNotExistException {
-        return taskRepository.findById(id).map(task -> {
-            return ResponseEntity.ok(taskConverter.convertModelToDTOModel(task));
-        }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
+    public Response getById(Long id) throws TaskDoesNotExistException {
+        Task task = taskRepository.findById(id);
+        if (task == null) {
+            throw new TaskDoesNotExistException("Task not found");
+        }
+        return Response.ok(taskConverter.convertModelToDTOModel(task)).build();
     }
 
-    public ResponseEntity<?> create(User user, TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException  {
+    public Response create(User user, TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
         Task task = taskConverter.convertDTOModelToModel(taskDTO);
         task.setCreatedBy(user.getEmail());
-        return saveTask(task);
+        return saveTask(user, task);
     }
 
+    @SuppressWarnings("null")
     @Transactional
-    public ResponseEntity<?> saveTask(Task task) throws UserDoesNotExistException {
+    public Response saveTask(User user, Task task) throws UserDoesNotExistException {
         Map<String, String> errors = ModelValidator.validate(task, validator);
         if (task.getTaskOrder() == null) {
             task.setTaskOrder(0);
@@ -106,75 +91,85 @@ public class TaskService {
                 }
             }
             task.setUsers(null);
-            Task savedTask = taskRepository.save(task);
-            if (task.getId() == null) {
-                taskRepository.increaseTaskOrder(- 1, task.getTaskStatus().ordinal());
+            Task savedTask = taskRepository.save(user, task);
+            if (savedTask.getId() != null) {
+                task.setId(savedTask.getId());
             }
             if (task.getId() != null) {
-                taskRepository.deleteExistingUsersFromTask(task.getId());
+                taskRepository.deleteLinksForTask(task.getId());
             }
-         
-            Long taskId = savedTask.getId();
-            task.setId(taskId);
-               if(userIds != null && !userIds.isEmpty()){
-                userIds.forEach(userId -> {
-                  taskRepository.assignUserToTask(taskId, userId);
-                });
+            if (userIds != null && !userIds.isEmpty()) {
+                userIds.forEach(userId -> taskRepository.assignUserToTask(task.getId(), userId));
             }
-            return ResponseEntity.ok(task);
+
+            savedTask.setUsers(null);
+            return Response.ok(savedTask).build();
         }
-        return ResponseEntity.badRequest().body(errors);
+        return Response.status(Response.Status.BAD_REQUEST).entity(errors).build();
+
     }
 
-    public ResponseEntity<?> update(User user, Long id, TaskDTO taskDTO) throws NotValidTaskPriorityException,
+    public Response update(User user, Long id, TaskDTO taskDTO) throws NotValidTaskPriorityException,
             NotValidTaskStatusException, UserDoesNotExistException, OptimisticLockException, TaskDoesNotExistException {
-        return taskRepository.findById(id).map(task -> {
-            Integer dtoVersion = taskDTO.getVersion();
-            if (!task.getVersion().equals(dtoVersion)) {
-                throw new OptimisticLockException(
+        Task task = taskRepository.findById(id);
+        if (task == null) {
+            throw new TaskDoesNotExistException("Task not found");
+        }
+
+        Integer dtoVersion = taskDTO.getVersion();
+        if (!task.getVersion().equals(dtoVersion)) {
+            throw new OptimisticLockException(
                         "Task already modified"
-                );
-            }
+            );
+        }
             taskDTO.setId(id);
             taskDTO.setCreatedBy(task.getCreatedBy());
             taskDTO.setVersion(task.getVersion());
             taskDTO.setUpdatedBy(user.getEmail());
             taskDTO.setTaskOrder(task.getTaskOrder());
             try {
-                return saveTask(taskConverter.convertDTOModelToModel(taskDTO));
+                return saveTask(user, taskConverter.convertDTOModelToModel(taskDTO));
             } catch (UserDoesNotExistException e) {
-                return ResponseEntity.badRequest().body(Map.of("users", "One or more users provided do not exist"));
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(Map.of("users", "One or more users provided do not exist"))
+                        .build();
             }
-        }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
+
     }
 
-    public ResponseEntity<?> dragTask(User user, DragTaskDTO dragTaskDTO) throws
-            NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return taskRepository.findById(dragTaskDTO.getTaskId()).map(task -> {
-            if (!task.getVersion().equals(dragTaskDTO.getTaskVersion())) {
-                throw new OptimisticLockException(
-                        "Task already modified"
-                );
-            }
-            TaskStatus prevTaskStatus = task.getTaskStatus();
-            TaskStatus taskStatus = this.taskConverter.convertStringToTaskStatus(dragTaskDTO.getTaskStatus());
-            task.setTaskStatus(taskStatus);
-            task.setTaskOrder(dragTaskDTO.getTaskOrder());
-            try {
-                saveTask(task);
-                taskRepository.increaseTaskOrder(dragTaskDTO.getTaskOrder(), taskStatus.ordinal());
-                taskRepository.decreaseTaskOrder(dragTaskDTO.getTaskOrder(), prevTaskStatus.ordinal());
-                return ResponseEntity.ok().build();
-            } catch (UserDoesNotExistException e) {
-                return ResponseEntity.badRequest().body(Map.of("users", "One or more users provided do not exist"));
-            }
-        }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
+    public Response dragTask(User user, DragTaskDTO dragTaskDTO) throws
+            NotValidTaskStatusException, TaskDoesNotExistException {
+        Task task = taskRepository.findById(dragTaskDTO.getTaskId());
+        if (task == null) {
+            throw new TaskDoesNotExistException("Task not found");
+        }
+
+        if (!task.getVersion().equals(dragTaskDTO.getTaskVersion())) {
+            throw new OptimisticLockException(
+                    "Task already modified");
+        }
+
+        TaskStatus prevTaskStatus = task.getTaskStatus();
+        TaskStatus taskStatus = this.taskConverter.convertStringToTaskStatus(dragTaskDTO.getTaskStatus());
+        task.setTaskStatus(taskStatus);
+        task.setTaskOrder(dragTaskDTO.getTaskOrder());
+        task.setUpdatedBy(user.getEmail());
+        taskRepository.save(user, task);
+        taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
+        taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), prevTaskStatus.ordinal(), false);
+        task.setUsers(null);
+        return Response.ok().entity(task).build();
+
     }
 
 
-    public ResponseEntity<?> patch(User user, Long id, TaskDTO taskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, OptimisticLockException, TaskDoesNotExistException {
-        return taskRepository.findById(id).map(task -> {
+    public Response patch(User user, Long id, TaskDTO taskDTO)
+            throws NotValidTaskStatusException, UserDoesNotExistException,
+            OptimisticLockException, TaskDoesNotExistException {
+        Task task = taskRepository.findById(id);
+        if (task == null) {
+            throw new TaskDoesNotExistException("Task not found");
+        }
             if (!task.getVersion().equals(taskDTO.getVersion())) {
                 throw new OptimisticLockException(
                         "Task already modified"
@@ -197,27 +192,27 @@ public class TaskService {
             }
             task.setUpdatedBy(user.getEmail());
             try {
-                return saveTask(task);
+                return saveTask(user, task);
             } catch (UserDoesNotExistException e) {
-                return ResponseEntity.badRequest().body(Map.of("users", "One or more users provided do not exist"));
-            }
-        }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("users", "One or more users provided do not exist"))
+                    .build();
+        }
     }
 
     @Transactional
-    public ResponseEntity<?> delete(@NonNull Long id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
-        return taskRepository.findById(id).map(task -> {
-            taskRepository.deleteExistingUsersFromTask(id);
-            if (!task.getVersion().equals(version)) {
-                throw new OptimisticLockException(
-                        "Task already modified"
-                );
-            }
-            taskRepository.deleteById(id);
+    public Response delete(Long id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+        Task task = taskRepository.findById(id);
+        if (task == null) {
+            throw new TaskDoesNotExistException("Task not found");
+        }
 
-            taskRepository.decreaseTaskOrder(task.getTaskOrder(), task.getTaskStatus().ordinal());
-           return ResponseEntity.ok().build();
-        }).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
-    
+        if (!task.getVersion().equals(version)) {
+            throw new OptimisticLockException("Task already modified");
+        }
+
+        taskRepository.delete(task);
+
+        return Response.ok().entity(new TaskDTO(task)).build();
     }
 }

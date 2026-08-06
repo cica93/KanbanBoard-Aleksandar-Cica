@@ -1,8 +1,11 @@
 package com.example.Kanban.Board.utilities;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 import com.example.Kanban.Board.dto.UserDTO;
 import com.example.Kanban.Board.model.User;
 
+@ApplicationScoped
 public class UserConverter extends GenericConverter<User, UserDTO> {
 
     @Override

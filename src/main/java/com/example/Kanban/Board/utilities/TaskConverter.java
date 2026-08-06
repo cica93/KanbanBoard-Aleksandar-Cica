@@ -2,6 +2,8 @@ package com.example.Kanban.Board.utilities;
 
 import java.util.Arrays;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
@@ -9,6 +11,7 @@ import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.TaskPriority;
 import com.example.Kanban.Board.model.TaskStatus;
 
+@ApplicationScoped
 public class TaskConverter extends GenericConverter<Task, TaskDTO> {
 
     private final UserConverter userConverter = new UserConverter();

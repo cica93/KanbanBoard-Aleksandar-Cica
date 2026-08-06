@@ -1,5 +1,5 @@
 input UserInput {
-  id: ID!
+  id: Long!
   fullName: String
   email: String
   token: String
@@ -16,7 +16,7 @@ input TaskInput {
 }
 
 type Task {
-  id: ID!
+  id: Long!
   title: String!
   description: String!
   taskStatus: String!
@@ -36,13 +36,13 @@ type User {
 }
 
 type Query {
-    getTaskById(id: ID!): Task!
-    getTasks(page: Int!, pageSize: Int!, columns: [String!], order: String, description: String): [Task!]!
-    getUsers: [User]
+    getTaskById(id: Long!): Task!
+    getTasks(limit: Int!, offset: Int!, description: String): [Task!]!
 }
 
 type Mutation {
     createTask(task: TaskInput!): Task
-    updateTask(id: ID!, task: TaskInput!): Task
-    deleteTask(id: ID!, version: Int!): Task
+    updateTask(id: Long!, task: TaskInput!): Task
+    deleteTask(id: Long!, version: Int!): Task
+    dragTask(taskId: Int!, taskStatus: String!, taskOrder: Int!, taskVersion: Int): OptionalTask
 }
