@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.hibernate.annotations.ColumnDefault;
 
+import com.example.Kanban.Board.utilities.TaskEntityListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -20,8 +22,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import com.example.Kanban.Board.utilities.TaskEntityListener;
 
 @Entity
 @EntityListeners(TaskEntityListener.class)
@@ -44,14 +44,17 @@ public class Task implements Serializable {
     @Size(min = 2, max = 50, message = "Description should have between 2 and 50 characters")
     private String description;
 
+    @NotNull
     @Enumerated(EnumType.ORDINAL)
-    @Column(nullable = true, name = "task_status")
+    @Column(name = "task_status")
     private TaskStatus taskStatus;
 
+    @NotNull
     @Enumerated(EnumType.ORDINAL)
-    @Column(nullable = false, name = "task_priority")
+    @Column(name = "task_priority")
     private TaskPriority taskPriority;
 
+    @NotNull
     @Column(name = "created_by")
     private String createdBy;
 

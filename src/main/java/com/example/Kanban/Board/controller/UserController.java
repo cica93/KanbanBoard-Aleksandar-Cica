@@ -58,7 +58,7 @@ public class UserController {
     public Response currentUser() {
         UserDTO dto
                 = userConverter.convertModelToDTOModel(user);
-        return Response.ok(dto).build();
+        return Response.ok().entity(dto).build();
     }
 
     @GET
