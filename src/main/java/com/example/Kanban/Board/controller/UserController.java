@@ -3,15 +3,17 @@ package com.example.Kanban.Board.controller;
 
 import com.example.Kanban.Board.annotations.CurrentUser;
 import com.example.Kanban.Board.dto.UserDTO;
+import com.example.Kanban.Board.exceptions.ForbiddenMethodException;
+import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.UserService;
 import com.example.Kanban.Board.utilities.UserConverter;
 
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -28,13 +30,12 @@ public class UserController {
 
     private final UserConverter userConverter;
 
-    @Inject
-    @CurrentUser
-    private User user;
+    private final User currentUser;
 
-    public UserController(UserService userService, UserConverter userConverter) {
+    public UserController(UserService userService, UserConverter userConverter, @CurrentUser User currentUser) {
         this.userService = userService;
         this.userConverter = userConverter;
+        this.currentUser = currentUser;
     }
 
     @GET
@@ -55,7 +56,8 @@ public class UserController {
 
     @GET
     @Path("/current")
-    public Response currentUser() {
+    public Response currentUser(@HeaderParam("token") String token) throws ForbiddenMethodException, UserDoesNotExistException, Exception {
+        User user = this.userService.findUser(token);
         UserDTO dto
                 = userConverter.convertModelToDTOModel(user);
         return Response.ok().entity(dto).build();

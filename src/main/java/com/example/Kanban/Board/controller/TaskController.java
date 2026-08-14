@@ -1,5 +1,17 @@
 package com.example.Kanban.Board.controller;
 
+import java.sql.SQLException;
+
+import com.example.Kanban.Board.annotations.CurrentUser;
+import com.example.Kanban.Board.dto.DragTaskDTO;
+import com.example.Kanban.Board.dto.TaskDTO;
+import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
+import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
+import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
+import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
+import com.example.Kanban.Board.model.User;
+import com.example.Kanban.Board.service.TaskService;
+
 import jakarta.persistence.OptimisticLockException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -14,19 +26,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import java.sql.SQLException;
-
-import com.example.Kanban.Board.annotations.CurrentUser;
-import com.example.Kanban.Board.dto.DragTaskDTO;
-import com.example.Kanban.Board.dto.TaskDTO;
-import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
-import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
-import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
-import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
-import com.example.Kanban.Board.model.User;
-import com.example.Kanban.Board.service.TaskService;
-
 
 @Path("/api/tasks")
 @Produces(MediaType.APPLICATION_JSON)
