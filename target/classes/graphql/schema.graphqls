@@ -7,12 +7,26 @@ input UserInput {
   image: String
 }
 
+
 input TaskInput {
+  id: Long!
   title: String!
   description: String!
   taskStatus: String!
   taskPriority: String!
-  users: [UserInput!]
+  version: Int!
+  taskOrder: Int!
+  users: [UserInput!]!
+}
+
+
+type User {
+  id: Long
+  email: String
+  fullName: String
+  token: String
+  password: String
+  image: String
 }
 
 type Task {
@@ -23,26 +37,17 @@ type Task {
   taskPriority: String!
   version: Int!
   taskOrder: Int!
-  users: [User!]
-}
-
-type User {
-  id: ID
-  email: String
-  fullName: String
-  token: String
-  password: String
-  image: String
+  users: [User!]!
 }
 
 type Query {
-    getTaskById(id: Long!): Task!
+    getTaskById(id: Int!): Task!
     getTasks(limit: Int!, offset: Int!, description: String): [Task!]!
 }
 
 type Mutation {
     createTask(task: TaskInput!): Task
-    updateTask(id: Long!, task: TaskInput!): Task
-    deleteTask(id: Long!, version: Int!): Task
+    updateTask(id: Int!, task: TaskInput!): Task
+    deleteTask(id: Int!, version: Int!): Task
     dragTask(taskId: Int!, taskStatus: String!, taskOrder: Int!, taskVersion: Int): OptionalTask
 }

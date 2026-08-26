@@ -2,8 +2,11 @@ package com.example.Kanban.Board.dto;
 
 import java.util.List;
 
+import org.eclipse.microprofile.graphql.Input;
+
 import com.example.Kanban.Board.model.Task;
 
+@Input("TaskInput")
 public class TaskDTO {
 
     private Long id;

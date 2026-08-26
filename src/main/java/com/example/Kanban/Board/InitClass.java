@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.Kanban.Board.configuration.PasswordEncoder;
-
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.TaskPriority;
@@ -19,11 +18,8 @@ import jakarta.ws.rs.ext.Provider;
 @Provider
 public class InitClass {
 
-
     private final TaskService taskService;
-
     private final UserRepository userRepository;
-    
     private final PasswordEncoder passwordEncoder;
 
     public InitClass(TaskService taskService, UserRepository userRepository, PasswordEncoder passwordEncoder) {

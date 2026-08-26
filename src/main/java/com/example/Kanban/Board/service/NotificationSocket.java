@@ -1,5 +1,9 @@
 package com.example.Kanban.Board.service;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.example.Kanban.Board.utilities.JsonUtils;
 
 import io.quarkus.websockets.next.OnClose;
@@ -7,10 +11,6 @@ import io.quarkus.websockets.next.OnOpen;
 import io.quarkus.websockets.next.WebSocket;
 import io.quarkus.websockets.next.WebSocketConnection;
 import jakarta.enterprise.context.ApplicationScoped;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @WebSocket(path = "/ws")
 @ApplicationScoped

@@ -156,7 +156,7 @@ public class TaskService {
         task.setUpdatedBy(user.getEmail());
         taskRepository.save(user, task);
         taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
-        taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), prevTaskStatus.ordinal(), false);
+        taskRepository.updateTaskOrderForStatus(task.getTaskOrder(), prevTaskStatus.ordinal(), false);
         task.setUsers(null);
         return Response.ok().entity(task).build();
 

@@ -42,7 +42,10 @@ public class TaskGraphqlController {
     @Mutation("createTask")
     public Task createTask(@Name("task") TaskDTO taskDTO)
             throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
-        return (Task) taskService.create(currentUser.get(), taskDTO).getEntity();
+        User user = new User();
+        user.setEmail("pera@gmail.com");
+        Task task = (Task) taskService.create(user, taskDTO).getEntity();
+        return task;
     }
 
     @Mutation("dragTask")
@@ -78,7 +81,8 @@ public class TaskGraphqlController {
     @SuppressWarnings("unchecked")
     public List<TaskDTO> getTasks(String description, @DefaultValue("20") Integer limit, @DefaultValue("0") Integer offset) throws SQLException {
         Object entity = taskService.get(limit, offset, description).getEntity();
-        return (List<TaskDTO>) entity;
+        List<TaskDTO> l = (List<TaskDTO>) entity;
+        return l;
     }
 
 
