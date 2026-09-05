@@ -8,7 +8,6 @@ import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
-import com.example.Kanban.Board.annotations.CurrentUser;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
@@ -20,8 +19,6 @@ import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
 import jakarta.persistence.OptimisticLockException;
 
 @GraphQLApi
@@ -29,10 +26,6 @@ import jakarta.persistence.OptimisticLockException;
 public class TaskGraphqlController {
 
     private final TaskService taskService;
-
-    @Inject
-    @CurrentUser
-    Instance<User> currentUser;
 
     public TaskGraphqlController(TaskService taskService) {
         this.taskService = taskService;

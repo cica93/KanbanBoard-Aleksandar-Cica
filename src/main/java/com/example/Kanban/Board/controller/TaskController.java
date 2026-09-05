@@ -2,14 +2,12 @@ package com.example.Kanban.Board.controller;
 
 import java.sql.SQLException;
 
-import com.example.Kanban.Board.annotations.CurrentUser;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
-import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
 
 import jakarta.persistence.OptimisticLockException;
@@ -34,10 +32,8 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    private final User currentUser;
 
-    public TaskController(@CurrentUser User currentUser, TaskService taskService) {
-        this.currentUser = currentUser;
+    public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
@@ -61,7 +57,7 @@ public class TaskController {
     @POST
     public Response create(TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
         return taskService.create(
-                currentUser,
+                null,
                 taskDTO
         );
     }
