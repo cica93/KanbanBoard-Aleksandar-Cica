@@ -66,7 +66,7 @@ public class User implements Serializable {
     private String password;
 
     @Lob()
-    @Column(name = "image", length = 10484760)
+    @Column(name = "image", length = 10484760, nullable = true)
     private byte[] image;
 
     @ManyToMany(mappedBy = "users")

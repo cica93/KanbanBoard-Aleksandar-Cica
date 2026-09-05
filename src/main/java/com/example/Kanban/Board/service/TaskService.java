@@ -1,12 +1,14 @@
 package com.example.Kanban.Board.service;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskPatchDTO;
+import com.example.Kanban.Board.dto.TasksByStatusDTO;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
@@ -34,9 +36,16 @@ public class TaskService {
     }
 
     public Response get(Integer limit, Integer offset, String description) {
-        var result = taskRepository.getTasks(limit, offset, description).stream()
+        List<TasksByStatusDTO> result = taskRepository.getTasks(limit, offset, description).stream()
                 .collect(Collectors.groupingBy(Task::getTaskStatus, LinkedHashMap::new,
-                        Collectors.toList()));
+                        Collectors.toList())).entrySet()
+                .stream()
+                .map(entry -> new TasksByStatusDTO(
+                entry.getKey(),
+                entry.getValue()
+        ))
+                .toList();
+
         return Response.ok(result).build();
     }
 

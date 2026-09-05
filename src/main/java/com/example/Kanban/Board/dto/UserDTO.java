@@ -15,9 +15,22 @@ public class UserDTO {
     public UserDTO() {
     }
 
-    public UserDTO(Long id, String fullName, String email, String password, String token, byte[] image) {
+    public UserDTO(
+            Long id,
+            String fullName) {
         this.id = id;
         this.fullName = fullName;
+    }
+
+    public UserDTO(
+            Long id,
+            String fullName,
+            String email,
+            String password,
+            String token,
+            byte[] image
+    ) {
+        this(id, fullName);
         this.email = email;
         this.password = password;
         this.token = token;

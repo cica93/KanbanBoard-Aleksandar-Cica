@@ -15,12 +15,9 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class UserRepository implements PanacheRepository<User> {
 
+
     public Optional<UserDTO> findByEmail(String email) {
         return find("email", email).project(UserDTO.class).firstResultOptional();
-    }
-
-    public Optional<UserDTO> findByToken(String token) {
-        return find("token", token).project(UserDTO.class).firstResultOptional();
     }
 
     public PanacheQuery<UserDTO> findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(

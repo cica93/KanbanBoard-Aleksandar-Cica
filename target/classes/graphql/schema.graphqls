@@ -40,8 +40,13 @@ type Task {
   users: [User!]!
 }
 
+type TasksByStatus {
+  status: String;
+  tasks: [Task!]!
+}
+
 type Query {
-    getTaskById(id: Int!): Task!
+    getTaskById(id: Int!): TasksByStatus!
     getTasks(limit: Int!, offset: Int!, description: String): [Task!]!
 }
 

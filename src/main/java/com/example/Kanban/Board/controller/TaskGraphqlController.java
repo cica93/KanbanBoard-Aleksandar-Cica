@@ -10,6 +10,7 @@ import org.eclipse.microprofile.graphql.Query;
 
 import com.example.Kanban.Board.configuration.JsonWebToken;
 import com.example.Kanban.Board.dto.DragTaskDTO;
+import com.example.Kanban.Board.dto.TasksByStatusDTO;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
@@ -69,9 +70,9 @@ public class TaskGraphqlController {
 
     @Query("getTasks")
     @SuppressWarnings("unchecked")
-    public List<Task> getTasks(String description, @DefaultValue("20") Integer limit, @DefaultValue("0") Integer offset) throws SQLException {
-        List<Task> l = (List<Task>) taskService.get(limit, offset, description).getEntity();
-        return l;
+    public List<TasksByStatusDTO> getTasks(String description, @DefaultValue("20") Integer limit, @DefaultValue("0") Integer offset) throws SQLException {
+        return (List<TasksByStatusDTO>) taskService
+                .get(limit, offset, description).getEntity();
     }
 
 }
