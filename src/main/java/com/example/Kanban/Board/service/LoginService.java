@@ -6,6 +6,7 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 
 import com.example.Kanban.Board.configuration.PasswordEncoder;
+import com.example.Kanban.Board.dto.UserDTO;
 import com.example.Kanban.Board.exceptions.BadCredentialsException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.UserRepository;
@@ -40,7 +41,7 @@ public class LoginService {
                 || user.getPassword() == null || user.getPassword().isBlank()) {
             throw new BadCredentialsException("Password and email must be provided");
         }
-        User userFromDataBase = userRepository.findByEmail(user.getEmail())
+        UserDTO userFromDataBase = userRepository.findByEmail(user.getEmail())
         .orElseThrow(() -> new BadCredentialsException("User with email "+user.getEmail()+" doesn't exist!"));
         
         boolean match = passwordEncoder.matches(user.getPassword(), userFromDataBase.getPassword());

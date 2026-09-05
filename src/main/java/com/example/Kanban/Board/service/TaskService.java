@@ -1,6 +1,6 @@
 package com.example.Kanban.Board.service;
 
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,7 +14,6 @@ import com.example.Kanban.Board.model.TaskStatus;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.TaskRepository;
 import com.example.Kanban.Board.repository.UserRepository;
-import com.example.Kanban.Board.utilities.NotificationService;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.OptimisticLockException;
@@ -29,14 +28,15 @@ public class TaskService {
     private final UserRepository userRepository;
 
     public TaskService(TaskRepository taskRepository,
-            UserRepository userRepository,
-            NotificationService notificationService) {
+            UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
     }
 
     public Response get(Integer limit, Integer offset, String description) {
-        List<Task> result = taskRepository.getTasks(limit, offset, description);
+        var result = taskRepository.getTasks(limit, offset, description).stream()
+                .collect(Collectors.groupingBy(Task::getTaskStatus, LinkedHashMap::new,
+                        Collectors.toList()));
         return Response.ok(result).build();
     }
 

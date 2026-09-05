@@ -15,9 +15,11 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
+@Priority(value = 1)
 public class JwtTokenUtil {
 
     public static final String DEFAULT_SECRET = "my-super-secret-key-that-is-at-least-32-characters-long";

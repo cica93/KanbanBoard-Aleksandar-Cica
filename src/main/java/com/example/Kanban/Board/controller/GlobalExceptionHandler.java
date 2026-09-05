@@ -1,16 +1,16 @@
 package com.example.Kanban.Board.controller;
 
-import jakarta.persistence.OptimisticLockException;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.ExceptionMapper;
-import jakarta.ws.rs.ext.Provider;
-
 import com.example.Kanban.Board.exceptions.BadCredentialsException;
 import com.example.Kanban.Board.exceptions.ForbiddenMethodException;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
+
+import jakarta.persistence.OptimisticLockException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
 
 @Provider
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler
                 .status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(
                     new ErrorResponse(
-                        "An unexpected error occurred."
+                                ex == null ? "Generic error" : ex.getMessage()
                     )
                 )
                 .build();

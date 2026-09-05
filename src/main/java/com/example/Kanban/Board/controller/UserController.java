@@ -50,7 +50,7 @@ public class UserController {
     }
 
     @GET
-    @Path("/has-mail/{email}")
+    @Path("/has-email/{email}")
     public Response hasMail(
             @PathParam("email") String email) {
         return userService.hasMail(email);

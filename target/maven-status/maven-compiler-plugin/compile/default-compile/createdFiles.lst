@@ -4,10 +4,8 @@ com/example/Kanban/Board/model/User.class
 com/example/Kanban/Board/controller/GlobalExceptionHandler$ErrorResponse.class
 com/example/Kanban/Board/utilities/GenericConverter.class
 com/example/Kanban/Board/controller/TaskGraphqlController.class
-com/example/Kanban/Board/utilities/UserConverter.class
 com/example/Kanban/Board/dto/UserDTO.class
 com/example/Kanban/Board/controller/GlobalExceptionHandler.class
-com/example/Kanban/Board/dto/TaskDTO.class
 com/example/Kanban/Board/exceptions/InvalidEnumValueException.class
 com/example/Kanban/Board/model/TaskStatus.class
 com/example/Kanban/Board/exceptions/NotValidTaskPriorityException.class
@@ -34,7 +32,6 @@ com/example/Kanban/Board/KanbanBoardApplication.class
 com/example/Kanban/Board/repository/TaskRepository.class
 com/example/Kanban/Board/exceptions/ForbiddenMethodException.class
 com/example/Kanban/Board/service/LoginService.class
-com/example/Kanban/Board/utilities/TaskConverter.class
 com/example/Kanban/Board/utilities/JsonUtils.class
 com/example/Kanban/Board/configuration/AuthenticationFilter.class
 com/example/Kanban/Board/controller/LoginController.class
