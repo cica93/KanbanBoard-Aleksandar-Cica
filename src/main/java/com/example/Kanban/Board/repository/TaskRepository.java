@@ -50,14 +50,14 @@ public class TaskRepository implements PanacheRepository<Task> {
     }
 
     @Transactional
-    public Task save(User user, Task task) {
+    public Task save(String userEmail, Task task) {
         if (task.getId() == null) {
-            task.setCreatedBy(user.getEmail());
+            task.setCreatedBy(userEmail);
             entityManager.persist(task);
             entityManager.flush();
             return task;
         }
-        task.setUpdatedBy(user.getEmail());
+        task.setUpdatedBy(userEmail);
         Task merged = entityManager.merge(task);
         entityManager.flush();
         return merged;

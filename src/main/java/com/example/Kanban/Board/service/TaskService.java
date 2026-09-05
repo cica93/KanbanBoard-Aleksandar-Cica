@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
+import com.example.Kanban.Board.dto.TaskPatchDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
@@ -39,7 +40,6 @@ public class TaskService {
 
     private final TaskConverter taskConverter;
 
-    private final UserConverter userConverter;
 
     public TaskService(TaskRepository taskRepository,
             UserRepository userRepository,
@@ -51,7 +51,6 @@ public class TaskService {
         this.userRepository = userRepository;
         this.validator = validator;
         this.taskConverter = taskConverter;
-        this.userConverter = userConverter;
     }
 
     @Transactional
@@ -68,15 +67,15 @@ public class TaskService {
         return Response.ok(taskConverter.convertModelToDTOModel(task)).build();
     }
 
-    public Response create(User user, TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
+    public Response create(String userEmail, TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
         Task task = taskConverter.convertDTOModelToModel(taskDTO);
-        task.setCreatedBy(user.getEmail());
-        return saveTask(user, task);
+        task.setCreatedBy(userEmail);
+        return saveTask(userEmail, task);
     }
 
     @SuppressWarnings("null")
     @Transactional
-    public Response saveTask(User user, Task task) throws UserDoesNotExistException {
+    public Response saveTask(String userEmail, Task task) throws UserDoesNotExistException {
         Map<String, String> errors = ModelValidator.validate(task, validator);
         if (task.getTaskOrder() == null) {
             task.setTaskOrder(0);
@@ -91,7 +90,7 @@ public class TaskService {
                 }
             }
             task.setUsers(null);
-            Task savedTask = taskRepository.save(user, task);
+            Task savedTask = taskRepository.save(userEmail, task);
             if (savedTask.getId() != null) {
                 task.setId(savedTask.getId());
             }
@@ -109,7 +108,7 @@ public class TaskService {
 
     }
 
-    public Response update(User user, Long id, TaskDTO taskDTO) throws NotValidTaskPriorityException,
+    public Response update(String userEmail, Long id, TaskDTO taskDTO) throws NotValidTaskPriorityException,
             NotValidTaskStatusException, UserDoesNotExistException, OptimisticLockException, TaskDoesNotExistException {
         Task task = taskRepository.findById(id);
         if (task == null) {
@@ -125,10 +124,10 @@ public class TaskService {
             taskDTO.setId(id);
             taskDTO.setCreatedBy(task.getCreatedBy());
             taskDTO.setVersion(task.getVersion());
-            taskDTO.setUpdatedBy(user.getEmail());
+        taskDTO.setUpdatedBy(userEmail);
             taskDTO.setTaskOrder(task.getTaskOrder());
             try {
-                return saveTask(user, taskConverter.convertDTOModelToModel(taskDTO));
+                return saveTask(userEmail, taskConverter.convertDTOModelToModel(taskDTO));
             } catch (UserDoesNotExistException e) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of("users", "One or more users provided do not exist"))
@@ -137,7 +136,7 @@ public class TaskService {
 
     }
 
-    public Response dragTask(User user, DragTaskDTO dragTaskDTO) throws
+    public Response dragTask(String userEmail, DragTaskDTO dragTaskDTO) throws
             NotValidTaskStatusException, TaskDoesNotExistException {
         Task task = taskRepository.findById(dragTaskDTO.getTaskId());
         if (task == null) {
@@ -153,8 +152,7 @@ public class TaskService {
         TaskStatus taskStatus = this.taskConverter.convertStringToTaskStatus(dragTaskDTO.getTaskStatus());
         task.setTaskStatus(taskStatus);
         task.setTaskOrder(dragTaskDTO.getTaskOrder());
-        task.setUpdatedBy(user.getEmail());
-        taskRepository.save(user, task);
+        taskRepository.save(userEmail, task);
         taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
         taskRepository.updateTaskOrderForStatus(task.getTaskOrder(), prevTaskStatus.ordinal(), false);
         task.setUsers(null);
@@ -163,36 +161,34 @@ public class TaskService {
     }
 
 
-    public Response patch(User user, Long id, TaskDTO taskDTO)
-            throws NotValidTaskStatusException, UserDoesNotExistException,
-            OptimisticLockException, TaskDoesNotExistException {
-        Task task = taskRepository.findById(id);
-        if (task == null) {
+    public Response patch(String userEmail, Long id, TaskPatchDTO taskDTO)
+            throws OptimisticLockException, TaskDoesNotExistException {
+        Task existingTask = taskRepository.findById(id);
+        if (existingTask == null) {
             throw new TaskDoesNotExistException("Task not found");
         }
-            if (!task.getVersion().equals(taskDTO.getVersion())) {
+        if (!existingTask.getVersion().equals(taskDTO.getVersion())) {
                 throw new OptimisticLockException(
                         "Task already modified"
                 );
             }
-            if (taskDTO.getDescription() != null) {
-                task.setDescription(taskDTO.getDescription());
+        if (taskDTO.getDescription().isPresent()) {
+            existingTask.setDescription(taskDTO.getDescription().get());
             }
-            if (taskDTO.getTitle() != null) {
-                task.setTitle(taskDTO.getTitle());
+        if (taskDTO.getTitle().isPresent()) {
+            existingTask.setTitle(taskDTO.getTitle().get());
             }
-            if (taskDTO.getTaskStatus() != null) {
-                task.setTaskStatus(taskConverter.convertStringToTaskStatus(taskDTO.getTaskStatus()));
+        if (taskDTO.getTaskStatus().isPresent()) {
+            existingTask.setTaskStatus(taskDTO.getTaskStatus().get());
             }
-            if (taskDTO.getTaskPriority() != null) {
-                task.setTaskPriority(taskConverter.convertStringToTaskPriority(taskDTO.getTaskPriority()));
+        if (taskDTO.getTaskPriority().isPresent()) {
+            existingTask.setTaskPriority(taskDTO.getTaskPriority().get());
             }
-            if (taskDTO.getUsers() != null) {
-                task.setUsers(userConverter.convertListOfDTOModelsTOModel(taskDTO.getUsers()));
-            }
-            task.setUpdatedBy(user.getEmail());
+        if (taskDTO.getUsers().isPresent()) {
+            existingTask.setUsers(taskDTO.getUsers().get());
+        }
             try {
-                return saveTask(user, task);
+                return saveTask(userEmail, existingTask);
             } catch (UserDoesNotExistException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("users", "One or more users provided do not exist"))

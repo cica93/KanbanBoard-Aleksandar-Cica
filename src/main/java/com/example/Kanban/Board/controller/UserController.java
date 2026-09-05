@@ -1,11 +1,6 @@
 package com.example.Kanban.Board.controller;
 
 
-import com.example.Kanban.Board.annotations.CurrentUser;
-import com.example.Kanban.Board.dto.UserDTO;
-import com.example.Kanban.Board.exceptions.ForbiddenMethodException;
-import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
-import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.UserService;
 import com.example.Kanban.Board.utilities.UserConverter;
 
@@ -18,6 +13,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -28,14 +24,8 @@ public class UserController {
 
     private final UserService userService;
 
-    private final UserConverter userConverter;
-
-    private final User currentUser;
-
-    public UserController(UserService userService, UserConverter userConverter, @CurrentUser User currentUser) {
+    public UserController(UserService userService, UserConverter userConverter) {
         this.userService = userService;
-        this.userConverter = userConverter;
-        this.currentUser = currentUser;
     }
 
     @GET
@@ -56,11 +46,8 @@ public class UserController {
 
     @GET
     @Path("/current")
-    public Response currentUser(@HeaderParam("token") String token) throws ForbiddenMethodException, UserDoesNotExistException, Exception {
-        User user = this.userService.findUser(token);
-        UserDTO dto
-                = userConverter.convertModelToDTOModel(user);
-        return Response.ok().entity(dto).build();
+    public Response currentUser(@HeaderParam(HttpHeaders.AUTHORIZATION) String header) {
+        return userService.currentUser(header);
     }
 
     @GET

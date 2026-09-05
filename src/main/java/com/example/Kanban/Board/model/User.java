@@ -56,12 +56,13 @@ public class User implements Serializable {
     @NotNull(message = "Full Name is required")
     @NotBlank(message = "Full Name is required")
     @Size(min = 3, max = 30, message = "Name can hve max 30 characters")
-    @Column(name = "full_name")
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
     private String token;
 
     @Password
+    @Column(nullable = false)
     private String password;
 
     @Lob()

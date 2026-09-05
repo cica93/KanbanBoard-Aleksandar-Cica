@@ -15,7 +15,6 @@ import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
-import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.service.TaskService;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -34,10 +33,8 @@ public class TaskGraphqlController {
 
     @Mutation("createTask")
     public Task createTask(@Name("task") TaskDTO taskDTO)
-            throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
-        User user = new User();
-        user.setEmail("pera@gmail.com");
-        Task task = (Task) taskService.create(user, taskDTO).getEntity();
+            throws UserDoesNotExistException {
+        Task task = (Task) taskService.create("pera@gmail.com", taskDTO).getEntity();
         return task;
     }
 
@@ -49,15 +46,13 @@ public class TaskGraphqlController {
         dragTaskDTO.setTaskVersion(taskVersion);
         dragTaskDTO.setTaskStatus(taskStatus);
         dragTaskDTO.setTaskOrder(taskOrder);
-        User user = new User();
-        user.setEmail("pera@gmail.com");
-        Task task = (Task) taskService.dragTask(user, dragTaskDTO).getEntity();
+        Task task = (Task) taskService.dragTask("pera@gmail.com", dragTaskDTO).getEntity();
         return task;
     }
 
     @Mutation("updateTask")
     public Task updateTask(@Name("id") Integer id, @Name("task") TaskDTO task) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException, TaskDoesNotExistException {
-        return (Task) taskService.update(currentUser.get(), id.longValue(), task).getEntity();
+        return (Task) taskService.update("", id.longValue(), task).getEntity();
     }
 
     @Mutation("deleteTask")

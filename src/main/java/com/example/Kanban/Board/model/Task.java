@@ -37,25 +37,27 @@ public class Task implements Serializable {
     private Integer version;
 
     @NotNull
+    @Column(nullable = false)
     @Size(min = 2, max = 50, message = "Title should have between 2 and 10 characters")
     private String title;
 
     @NotNull
+    @Column(nullable = false)
     @Size(min = 2, max = 50, message = "Description should have between 2 and 50 characters")
     private String description;
 
     @NotNull
     @Enumerated(EnumType.ORDINAL)
-    @Column(name = "task_status")
+    @Column(name = "task_status", nullable = false)
     private TaskStatus taskStatus;
 
     @NotNull
     @Enumerated(EnumType.ORDINAL)
-    @Column(name = "task_priority")
+    @Column(name = "task_priority", nullable = false)
     private TaskPriority taskPriority;
 
     @NotNull
-    @Column(name = "created_by")
+    @Column(name = "created_by", nullable = false)
     private String createdBy;
 
     @Column(name = "updated_by")

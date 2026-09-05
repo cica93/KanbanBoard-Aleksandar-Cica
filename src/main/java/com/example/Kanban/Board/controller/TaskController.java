@@ -2,8 +2,10 @@ package com.example.Kanban.Board.controller;
 
 import java.sql.SQLException;
 
+import com.example.Kanban.Board.configuration.JsonWebToken;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskDTO;
+import com.example.Kanban.Board.dto.TaskPatchDTO;
 import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
 import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
@@ -31,10 +33,11 @@ import jakarta.ws.rs.core.Response;
 public class TaskController {
 
     private final TaskService taskService;
+    private final JsonWebToken jwt;
 
-
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, JsonWebToken jwt) {
         this.taskService = taskService;
+        this.jwt = jwt;
     }
 
 
@@ -67,14 +70,12 @@ public class TaskController {
     public Response update(
             @PathParam("id") Long id,
             TaskDTO taskDTO)
-            throws NotValidTaskPriorityException,
-                   NotValidTaskStatusException,
-                   UserDoesNotExistException,
+            throws UserDoesNotExistException,
                    TaskDoesNotExistException {
 
 
         return taskService.update(
-                currentUser,
+                jwt.getSubject(),
                 id,
                 taskDTO
         );
@@ -86,9 +87,9 @@ public class TaskController {
     @Path("/drag")
     public Response dragTask(
             DragTaskDTO dragTaskDTO)
-            throws NotValidTaskStatusException,TaskDoesNotExistException {
+            throws TaskDoesNotExistException {
         return taskService.dragTask(
-                currentUser,
+                jwt.getSubject(),
                 dragTaskDTO
         );
     }
@@ -99,15 +100,12 @@ public class TaskController {
     @Path("/{id}")
     public Response patch(
             @PathParam("id") Long id,
-            TaskDTO taskDTO)
-            throws NotValidTaskPriorityException,
-                   NotValidTaskStatusException,
-                   UserDoesNotExistException,
-                   TaskDoesNotExistException {
+            TaskPatchDTO taskDTO)
+            throws TaskDoesNotExistException {
 
 
         return taskService.patch(
-                currentUser,
+                "",
                 id,
                 taskDTO
         );

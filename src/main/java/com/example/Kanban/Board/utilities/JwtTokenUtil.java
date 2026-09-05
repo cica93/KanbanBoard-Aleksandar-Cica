@@ -8,9 +8,13 @@ import javax.crypto.SecretKey;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
@@ -64,7 +68,7 @@ public class JwtTokenUtil {
                     .parseClaimsJws(token)
                     .getBody();
             return claims.getSubject();
-        } catch (Exception e) {
+        } catch (ExpiredJwtException | MalformedJwtException | UnsupportedJwtException | SignatureException | IllegalArgumentException e) {
             throw new SecurityException("Invalid or expired JWT token "+ e.getMessage());
         }
     }
@@ -101,7 +105,7 @@ public class JwtTokenUtil {
                     .parseClaimsJws(token)
                     .getBody();
             return claims.getSubject();
-        } catch (Exception e) {
+        } catch (ExpiredJwtException | MalformedJwtException | UnsupportedJwtException | SignatureException | IllegalArgumentException e) {
             throw new SecurityException("Invalid or expired JWT token", e);
         }
     }
