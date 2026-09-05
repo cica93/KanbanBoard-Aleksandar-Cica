@@ -1,15 +1,12 @@
 package com.example.Kanban.Board.controller;
 
-import java.sql.SQLException;
 
 import com.example.Kanban.Board.configuration.JsonWebToken;
 import com.example.Kanban.Board.dto.DragTaskDTO;
-import com.example.Kanban.Board.dto.TaskDTO;
 import com.example.Kanban.Board.dto.TaskPatchDTO;
-import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
-import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
+import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.service.TaskService;
 
 import jakarta.persistence.OptimisticLockException;
@@ -45,7 +42,7 @@ public class TaskController {
     public Response get(
             @QueryParam("description") String description,
             @QueryParam("offset") @DefaultValue("0") Integer offset,
-            @QueryParam("limit") @DefaultValue("10") Integer limit) throws SQLException {
+            @QueryParam("limit") @DefaultValue("10") Integer limit) {
         return taskService.get(limit, offset, description); 
     }
 
@@ -58,10 +55,10 @@ public class TaskController {
     }
 
     @POST
-    public Response create(TaskDTO taskDTO) throws NotValidTaskPriorityException, NotValidTaskStatusException, UserDoesNotExistException {
+    public Response create(Task task) throws UserDoesNotExistException {
         return taskService.create(
-                null,
-                taskDTO
+                jwt.getSubject(),
+                task
         );
     }
 
@@ -69,7 +66,7 @@ public class TaskController {
     @Path("/{id}")
     public Response update(
             @PathParam("id") Long id,
-            TaskDTO taskDTO)
+            Task task)
             throws UserDoesNotExistException,
                    TaskDoesNotExistException {
 
@@ -77,7 +74,7 @@ public class TaskController {
         return taskService.update(
                 jwt.getSubject(),
                 id,
-                taskDTO
+                task
         );
     }
 
@@ -105,7 +102,7 @@ public class TaskController {
 
 
         return taskService.patch(
-                "",
+                jwt.getSubject(),
                 id,
                 taskDTO
         );

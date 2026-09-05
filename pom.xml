@@ -9,7 +9,7 @@
     <description>Quarkus port of the Kanban board application</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>21</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>

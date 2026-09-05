@@ -4,33 +4,25 @@ import com.example.Kanban.Board.model.TaskStatus;
 
 public class DragTaskDTO {
     private Long taskId;
-    private String taskStatus;
+    private TaskStatus taskStatus;
     private Integer taskOrder;
     private Integer taskVersion;
-    private String prevTaskStatus;
-    private TaskStatus taskStatusAsEnumStatus;
+    private TaskStatus prevTaskStatus;
 
-    public TaskStatus getTaskStatusAsEnumStatus() {
-        return taskStatusAsEnumStatus;
-    }
 
-    public void setTaskStatusAsEnumStatus(TaskStatus taskStatusAsEnumStatus) {
-        this.taskStatusAsEnumStatus = taskStatusAsEnumStatus;
-    }
-
-    public void setTaskStatus(String taskStatus) {
+    public void setTaskStatus(TaskStatus taskStatus) {
         this.taskStatus = taskStatus;
     }
 
-    public String getTaskStatus() {
+    public TaskStatus getTaskStatus() {
         return taskStatus;
     }
 
-    public String getPrevTaskStatus() {
+    public TaskStatus getPrevTaskStatus() {
         return prevTaskStatus;
     }
 
-    public void setPrevTaskStatus(String prevTaskStatus) {
+    public void setPrevTaskStatus(TaskStatus prevTaskStatus) {
         this.prevTaskStatus = prevTaskStatus;
     }
 

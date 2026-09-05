@@ -2,7 +2,6 @@ package com.example.Kanban.Board.controller;
 
 
 import com.example.Kanban.Board.service.UserService;
-import com.example.Kanban.Board.utilities.UserConverter;
 
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
@@ -24,7 +23,7 @@ public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService, UserConverter userConverter) {
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 

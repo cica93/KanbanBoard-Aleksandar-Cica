@@ -3,14 +3,14 @@ package com.example.Kanban.Board.repository;
 import java.util.Optional;
 import java.util.Set;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.transaction.Transactional;
-
+import com.example.Kanban.Board.dto.UserDTO;
 import com.example.Kanban.Board.model.User;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Sort;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class UserRepository implements PanacheRepository<User> {
@@ -19,19 +19,22 @@ public class UserRepository implements PanacheRepository<User> {
         return find("email", email).firstResultOptional();
     }
 
-     public Optional<User> findByToken(String token) {
-        return find("token", token).firstResultOptional();
+    public Optional<UserDTO> findByToken(String token) {
+        return find("token", token).project(UserDTO.class).firstResultOptional();
     }
 
-    public PanacheQuery<User> findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(
+    public PanacheQuery<UserDTO> findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(
             String email,
             String fullName, Sort sort) {
 
+        String normalizedEmail = email == null ? "" : email.toLowerCase();
+        String normalizedFullName = fullName == null ? "" : fullName.toLowerCase();
+
         return find(
             "LOWER(email) LIKE ?1 OR LOWER(fullName) LIKE ?2", sort,
-            "%" + email.toLowerCase() + "%",
-            "%" + fullName.toLowerCase() + "%"
-        );
+                "%" + normalizedEmail + "%",
+                "%" + normalizedFullName + "%"
+        ).project(UserDTO.class);
     }
 
     @Transactional

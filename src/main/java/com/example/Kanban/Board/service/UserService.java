@@ -1,9 +1,8 @@
 package com.example.Kanban.Board.service;
 
-import com.example.Kanban.Board.model.User;
+import com.example.Kanban.Board.dto.UserDTO;
 import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.utilities.JwtTokenUtil;
-import com.example.Kanban.Board.utilities.UserConverter;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.panache.common.Page;
@@ -14,25 +13,20 @@ import jakarta.ws.rs.core.Response;
 @ApplicationScoped
 public class UserService {
 
-    private final UserConverter userConverter;
     private final UserRepository userRepository;
     private final JwtTokenUtil jwtTokenUtil;
 
-    public UserService(UserConverter userConverter, UserRepository userRepository, JwtTokenUtil jwtTokenUtil) {
-        this.userConverter = userConverter;
+    public UserService(UserRepository userRepository, JwtTokenUtil jwtTokenUtil) {
         this.userRepository = userRepository;
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
     public Response get(Page page, Sort sort, String keyword) {
-        PanacheQuery<User> data;
-        if (keyword != null && !keyword.isBlank()) {
-            data = userRepository.findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(keyword, keyword, sort);
-        } else {
-            data = userRepository.findAll(sort);
-        }
+        PanacheQuery<UserDTO> data
+                = userRepository.findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase("", keyword, sort);
+
         data.page(page);
-        return Response.ok(userConverter.convertListOfModelsToDTOModel(data.list())).build();
+        return Response.ok(data.list()).build();
     }
 
     public Response hasMail(String email) {

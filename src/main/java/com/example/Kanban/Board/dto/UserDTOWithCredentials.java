@@ -2,15 +2,17 @@ package com.example.Kanban.Board.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class UserDTOWithCredentials extends UserDTO {
+public class UserDTOWithCredentials {
     
-    private String token;
-    
+    private Long id;
+    private String fullName;
+    private String email;
     @JsonIgnore
     private String password;
+    private String token;
+    private byte[] image;
 
     public UserDTOWithCredentials() {
-        super();
     }
 
     public UserDTOWithCredentials(
@@ -21,10 +23,44 @@ public class UserDTOWithCredentials extends UserDTO {
             String token,
             byte[] image
     ) {
-        super(id, fullName, email, image);
+        this.id = id;
+        this.fullName = fullName;
+        this.email = email;
         this.password = password;
         this.token = token;
-        
+        this.image = image;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     public String getToken() {

@@ -68,7 +68,7 @@ public class InitClass {
           task.setUsers(users);
           task.setCreatedBy(users.get(0).getEmail());
           try {
-            taskService.saveTask(users.get(0), task);
+              taskService.saveTask(users.get(0).getEmail(), task);
         } catch (UserDoesNotExistException e) {
         }
       }

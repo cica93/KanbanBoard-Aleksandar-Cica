@@ -5,19 +5,15 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
-
+import com.example.Kanban.Board.configuration.PasswordEncoder;
 import com.example.Kanban.Board.exceptions.BadCredentialsException;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.UserRepository;
-import com.example.Kanban.Board.utilities.UserConverter;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
-
-import com.example.Kanban.Board.configuration.PasswordEncoder;
 
 @ApplicationScoped
 public class LoginService {
@@ -28,12 +24,10 @@ public class LoginService {
     private  final SecretKey SECRET_KEY =
         Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
-    private final UserConverter userConverter;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public LoginService(UserConverter userConverter, UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userConverter = userConverter;
+    public LoginService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -60,7 +54,7 @@ public class LoginService {
             return Response.status(Response.Status.BAD_REQUEST)
             .entity("Token is not saved").build();
         }
-        return Response.ok(userConverter.convertModelToDTOModel(userFromDataBase)).build();
+        return Response.ok(userFromDataBase).build();
     }
 
 
