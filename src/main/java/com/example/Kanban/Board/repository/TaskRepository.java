@@ -143,13 +143,13 @@ public class TaskRepository implements PanacheRepository<Task> {
             dto.setTitle((String) tuple[8]);
             Long userId = tuple[9] != null ? ((Number) tuple[9]).longValue() : null;
             if (userId != null) {
-                User userDTO = new User();
-                userDTO.setId(userId);
-                userDTO.setEmail((String) tuple[10]);
-                userDTO.setFullName((String) tuple[11]);
-                userDTO.setImage((byte[]) tuple[12]);
+                User user = new User();
+                user.setId(userId);
+                user.setEmail((String) tuple[10]);
+                user.setFullName((String) tuple[11]);
+                user.setImage((byte[]) tuple[12]);
                 dto.setUsers(new ArrayList<>());
-                dto.getUsers().add(userDTO);
+                dto.getUsers().add(user);
             }
             return dto;
         });

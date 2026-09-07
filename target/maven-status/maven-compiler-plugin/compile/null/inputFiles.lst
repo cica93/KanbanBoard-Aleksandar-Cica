@@ -21,7 +21,6 @@
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/exceptions/NotValidTaskPriorityException.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/utilities/JsonUtils.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/JsonWebToken.java
-/Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/dto/UserDTOWithCredentials.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/repository/TaskRepository.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/model/Task.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/model/User.java
@@ -44,3 +43,4 @@
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/utilities/ModelValidator.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/service/LoginService.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/controller/UserController.java
+/Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/dto/TasksByStatusDTO.java

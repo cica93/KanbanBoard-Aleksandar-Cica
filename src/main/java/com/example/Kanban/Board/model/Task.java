@@ -32,8 +32,10 @@ public class Task implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Version
     @ColumnDefault("0")
+    @Column(nullable = false)
     private Integer version;
 
     @NotNull

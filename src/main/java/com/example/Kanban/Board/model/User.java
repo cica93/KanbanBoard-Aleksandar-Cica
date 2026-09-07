@@ -4,42 +4,25 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.example.Kanban.Board.annotations.Password;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.ColumnResult;
-import jakarta.persistence.ConstructorResult;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.NamedNativeQuery;
-import jakarta.persistence.SqlResultSetMapping;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name ="user", uniqueConstraints = {
-@UniqueConstraint(columnNames = { "email" }) })
-    @SqlResultSetMapping(
-        name = "userMapper",
-        classes = {
-            @ConstructorResult(
-            targetClass = User.class,
-                columns = {
-                    @ColumnResult(name = "id", type = Long.class),
-                    @ColumnResult(name = "email", type = String.class),
-                    @ColumnResult(name = "token", type = String.class),
-                })})
-@NamedNativeQuery(
-        name = "findByToken",
-        query = "SELECT id, email, token FROM user WHERE token = :token limit 1",
-        resultSetMapping = "userMapper")
+    @UniqueConstraint(columnNames = {"email"})})
 public class User implements Serializable {
 
     @Id
@@ -48,10 +31,9 @@ public class User implements Serializable {
 
     @NotNull(message = "Email is required")
     @NotBlank(message = "Email is required")
-    @Pattern(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$", message = "invalid email")
+    @Email(message = "invalid email")
     @Size(min = 3, max = 50, message = "Email can hve max 50 characters")
     private String email;
-
 
     @NotNull(message = "Full Name is required")
     @NotBlank(message = "Full Name is required")
@@ -61,7 +43,9 @@ public class User implements Serializable {
 
     private String token;
 
+    @NotNull
     @Password
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 

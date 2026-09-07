@@ -1,12 +1,11 @@
 package com.example.Kanban.Board.service;
 
-import com.example.Kanban.Board.dto.UserDTO;
+import java.util.List;
+
+import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.utilities.JwtTokenUtil;
 
-import io.quarkus.hibernate.orm.panache.PanacheQuery;
-import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 
@@ -21,12 +20,10 @@ public class UserService {
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
-    public Response get(Page page, Sort sort, String keyword) {
-        PanacheQuery<UserDTO> data
-                = userRepository.findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase("", keyword, sort);
-
-        data.page(page);
-        return Response.ok(data.list()).build();
+    public Response get(String keyword) {
+        List<User> data
+                = userRepository.findByFullNameContainingIgnoreCase(keyword);
+        return Response.ok(data).build();
     }
 
     public Response hasMail(String email) {

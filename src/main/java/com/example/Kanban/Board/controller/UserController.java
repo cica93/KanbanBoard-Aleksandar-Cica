@@ -3,9 +3,6 @@ package com.example.Kanban.Board.controller;
 
 import com.example.Kanban.Board.service.UserService;
 
-import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Sort;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
@@ -28,19 +25,8 @@ public class UserController {
     }
 
     @GET
-    public Response get(
-            @QueryParam("order") @DefaultValue("desc") String order,
-            @QueryParam("offset") @DefaultValue("0") Integer offset,
-            @QueryParam("column") @DefaultValue("id") String column,
-            @QueryParam("limit") @DefaultValue("10") Integer limit,
-            @QueryParam("keyword") String keyword) {
-
-        Sort sort = "desc".equalsIgnoreCase(order)
-                ? Sort.by(column).descending()
-                : Sort.by(column).ascending();
-        Page page = Page.of(offset / limit, limit);
-
-        return userService.get(page, sort, keyword);
+    public Response get(@QueryParam("keyword") String keyword) {
+        return userService.get(keyword);
     }
 
     @GET
