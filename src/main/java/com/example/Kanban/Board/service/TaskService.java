@@ -83,10 +83,9 @@ public class TaskService {
 
     @Transactional
     public Response dragTask(String userEmail, DragTaskDTO dragTaskDTO) throws TaskDoesNotExistException {
-        Task task = taskRepository.findById(dragTaskDTO.getTaskId());
-        if (task == null) {
-            throw new TaskDoesNotExistException("Task not found");
-        }
+        Task task = taskRepository.findByIdIncludingUsers(dragTaskDTO.getTaskId())
+                .orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
+
 
         if (!task.getVersion().equals(dragTaskDTO.getTaskVersion())) {
             throw new OptimisticLockException(
@@ -100,7 +99,6 @@ public class TaskService {
         taskRepository.save(userEmail, task);
         taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
         taskRepository.updateTaskOrderForStatus(task.getTaskOrder(), prevTaskStatus.ordinal(), false);
-        task.setUsers(null);
         return Response.ok().entity(task).build();
 
     }

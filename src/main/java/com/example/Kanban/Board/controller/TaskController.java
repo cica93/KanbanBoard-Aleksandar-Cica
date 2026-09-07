@@ -5,7 +5,6 @@ import com.example.Kanban.Board.configuration.JsonWebToken;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskPatchDTO;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
-import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.service.TaskService;
 
@@ -56,7 +55,7 @@ public class TaskController {
     }
 
     @POST
-    public Response create(@Valid Task task) throws UserDoesNotExistException {
+    public Response create(@Valid Task task) {
         return taskService.create(
                 jwt.getSubject(),
                 task
@@ -68,8 +67,7 @@ public class TaskController {
     public Response update(
             @PathParam("id") Long id,
             @Valid Task task)
-            throws UserDoesNotExistException,
-                   TaskDoesNotExistException {
+            throws TaskDoesNotExistException {
 
 
         return taskService.update(

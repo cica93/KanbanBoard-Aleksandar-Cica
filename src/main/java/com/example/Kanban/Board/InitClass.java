@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.Kanban.Board.configuration.PasswordEncoder;
-import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.TaskPriority;
 import com.example.Kanban.Board.model.TaskStatus;
@@ -66,11 +65,9 @@ public class InitClass {
           task.setTaskPriority(taskPriority);
           task.setTaskStatus(taskStatus);
           task.setUsers(users);
-          task.setCreatedBy(users.get(0).getEmail());
-          try {
-              taskService.saveTask(users.get(0).getEmail(), task);
-        } catch (UserDoesNotExistException e) {
-        }
+        task.setCreatedBy(users.get(0).getEmail());
+        taskService.saveTask(users.get(0).getEmail(), task);
+
       }
     
 }

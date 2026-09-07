@@ -10,7 +10,6 @@
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/utilities/TaskEntityListener.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/BCryptPasswordEncoder.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/model/TaskStatus.java
-/Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/dto/UserDTO.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/LimitingRequestFilter.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/dto/DragTaskDTO.java
 /Users/aleksandarcica/Desktop/projects/kanban-board/src/main/java/com/example/Kanban/Board/configuration/CorsFilter.java

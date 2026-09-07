@@ -3,7 +3,6 @@ input UserInput {
   fullName: String
   email: String
   token: String
-  password: String
   image: String
 }
 
@@ -25,7 +24,6 @@ type User {
   email: String
   fullName: String
   token: String
-  password: String
   image: String
 }
 

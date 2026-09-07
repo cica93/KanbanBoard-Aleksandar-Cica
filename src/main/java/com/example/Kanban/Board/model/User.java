@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.example.Kanban.Board.annotations.Password;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,7 +44,7 @@ public class User implements Serializable {
 
     @NotNull
     @Password
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    //com.fasterxml.jackson.annotation.JsonProperty; @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 

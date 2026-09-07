@@ -12,13 +12,12 @@ import com.example.Kanban.Board.configuration.JsonWebToken;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TasksByStatusDTO;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
-import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.TaskStatus;
 import com.example.Kanban.Board.service.TaskService;
-import com.example.Kanban.Board.utilities.EnumUtils;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.persistence.OptimisticLockException;
 
 @GraphQLApi
@@ -28,6 +27,7 @@ public class TaskGraphqlController {
     private final TaskService taskService;
     private final JsonWebToken jwt;
 
+    @Inject
     public TaskGraphqlController(TaskService taskService, JsonWebToken jwt) {
         this.taskService = taskService;
         this.jwt = jwt;
@@ -35,8 +35,7 @@ public class TaskGraphqlController {
 
 
     @Mutation("createTask")
-    public Task createTask(@Name("task") Task task)
-            throws UserDoesNotExistException {
+    public Task createTask(@Name("task") Task task) {
         Task created = (Task) taskService.create(jwt.getSubject(), task).getEntity();
         return created;
     }
@@ -47,14 +46,14 @@ public class TaskGraphqlController {
         DragTaskDTO dragTaskDTO = new DragTaskDTO();
         dragTaskDTO.setTaskId(taskId.longValue());
         dragTaskDTO.setTaskVersion(taskVersion);
-        dragTaskDTO.setTaskStatus(EnumUtils.valueOf(TaskStatus.class, taskStatus));
+        dragTaskDTO.setTaskStatus(TaskStatus.fromJson(taskStatus));
         dragTaskDTO.setTaskOrder(taskOrder);
         Task task = (Task) taskService.dragTask(jwt.getSubject(), dragTaskDTO).getEntity();
         return task;
     }
 
     @Mutation("updateTask")
-    public Task updateTask(@Name("id") Integer id, @Name("task") Task task) throws UserDoesNotExistException, TaskDoesNotExistException {
+    public Task updateTask(@Name("id") Integer id, @Name("task") Task task) throws TaskDoesNotExistException {
         return (Task) taskService.update(jwt.getSubject(), id.longValue(), task).getEntity();
     }
 
