@@ -10,6 +10,7 @@ import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.service.TaskService;
 
 import jakarta.persistence.OptimisticLockException;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -55,7 +56,7 @@ public class TaskController {
     }
 
     @POST
-    public Response create(Task task) throws UserDoesNotExistException {
+    public Response create(@Valid Task task) throws UserDoesNotExistException {
         return taskService.create(
                 jwt.getSubject(),
                 task
@@ -66,7 +67,7 @@ public class TaskController {
     @Path("/{id}")
     public Response update(
             @PathParam("id") Long id,
-            Task task)
+            @Valid Task task)
             throws UserDoesNotExistException,
                    TaskDoesNotExistException {
 

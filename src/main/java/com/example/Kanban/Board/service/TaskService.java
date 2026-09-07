@@ -3,19 +3,15 @@ package com.example.Kanban.Board.service;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskPatchDTO;
 import com.example.Kanban.Board.dto.TasksByStatusDTO;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
-import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.TaskStatus;
-import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.TaskRepository;
-import com.example.Kanban.Board.repository.UserRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.OptimisticLockException;
@@ -27,12 +23,9 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
 
-    private final UserRepository userRepository;
 
-    public TaskService(TaskRepository taskRepository,
-            UserRepository userRepository) {
+    public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
-        this.userRepository = userRepository;
     }
 
     public Response get(Integer limit, Integer offset, String description) {
@@ -57,43 +50,20 @@ public class TaskService {
         return Response.ok(task).build();
     }
 
-    public Response create(String userEmail, Task task) throws UserDoesNotExistException {
+    public Response create(String userEmail, Task task) {
         task.setCreatedBy(userEmail);
         return saveTask(userEmail, task);
     }
 
-    @SuppressWarnings("null")
     @Transactional
-    public Response saveTask(String userEmail, Task task) throws UserDoesNotExistException {
-        if (task.getTaskOrder() == null) {
-            task.setTaskOrder(0);
-        }
-        Set<Long> userIds = null;
-            if (task.getUsers() != null && !task.getUsers().isEmpty()) {
-                userIds = task.getUsers().stream().map(User::getId).collect(Collectors.toSet()); // remove duplicates
-                Long count = userRepository.countByIdIn(userIds);
-                if (count != userIds.size()) {
-                    throw new UserDoesNotExistException("Can not find all users provided in request body");
-                }
-            }
-            task.setUsers(null);
-            Task savedTask = taskRepository.save(userEmail, task);
-            if (savedTask.getId() != null) {
-                task.setId(savedTask.getId());
-            }
-            if (task.getId() != null) {
-                taskRepository.deleteLinksForTask(task.getId());
-            }
-            if (userIds != null && !userIds.isEmpty()) {
-                userIds.forEach(userId -> taskRepository.assignUserToTask(task.getId(), userId));
-            }
-
-            savedTask.setUsers(null);
-        return Response.ok(savedTask).build();
-
+    public Response saveTask(String userEmail, Task task) {
+        Task savedTask = taskRepository.save(userEmail, task);
+        task.setId(savedTask.getId());
+        return Response.ok(task).build();
     }
 
-    public Response update(String userEmail, Long id, Task task) throws UserDoesNotExistException, OptimisticLockException, TaskDoesNotExistException {
+    @Transactional
+    public Response update(String userEmail, Long id, Task task) throws OptimisticLockException, TaskDoesNotExistException {
         Task existingTask = taskRepository.findById(id);
         if (existingTask == null) {
             throw new TaskDoesNotExistException("Task not found");
@@ -108,16 +78,10 @@ public class TaskService {
         task.setCreatedBy(existingTask.getCreatedBy());
         task.setUpdatedBy(userEmail);
         task.setTaskOrder(existingTask.getTaskOrder());
-            try {
-                return saveTask(userEmail, task);
-            } catch (UserDoesNotExistException e) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(Map.of("users", "One or more users provided do not exist"))
-                        .build();
-            }
-
+        return saveTask(userEmail, task);
     }
 
+    @Transactional
     public Response dragTask(String userEmail, DragTaskDTO dragTaskDTO) throws TaskDoesNotExistException {
         Task task = taskRepository.findById(dragTaskDTO.getTaskId());
         if (task == null) {
@@ -152,29 +116,27 @@ public class TaskService {
                 throw new OptimisticLockException(
                         "Task already modified"
                 );
-            }
+        }
         if (taskDTO.getDescription().isPresent()) {
             existingTask.setDescription(taskDTO.getDescription().get());
-            }
+        }
+
         if (taskDTO.getTitle().isPresent()) {
             existingTask.setTitle(taskDTO.getTitle().get());
-            }
+        }
+
         if (taskDTO.getTaskStatus().isPresent()) {
             existingTask.setTaskStatus(taskDTO.getTaskStatus().get());
-            }
+        }
+
         if (taskDTO.getTaskPriority().isPresent()) {
             existingTask.setTaskPriority(taskDTO.getTaskPriority().get());
-            }
+        }
+
         if (taskDTO.getUsers().isPresent()) {
             existingTask.setUsers(taskDTO.getUsers().get());
         }
-            try {
-                return saveTask(userEmail, existingTask);
-            } catch (UserDoesNotExistException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("users", "One or more users provided do not exist"))
-                    .build();
-        }
+        return saveTask(userEmail, existingTask);
     }
 
     @Transactional
@@ -190,6 +152,6 @@ public class TaskService {
 
         taskRepository.delete(task);
 
-        return Response.ok().entity(1).build();
+        return Response.ok().entity(Map.of("deleted", 1)).build();
     }
 }
