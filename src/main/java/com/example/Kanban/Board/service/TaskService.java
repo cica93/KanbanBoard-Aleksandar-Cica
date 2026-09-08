@@ -1,5 +1,8 @@
 package com.example.Kanban.Board.service;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,13 +30,18 @@ public class TaskService {
     }
 
     public Response get(Integer limit, Integer offset, String description) {
-        List<TasksByStatusDTO> result = taskRepository.getTasks(limit, offset, description).stream()
-                .collect(Collectors.groupingBy(Task::getTaskStatus)).entrySet()
-                .stream()
-                .map(entry -> new TasksByStatusDTO(
-                entry.getKey(),
-                entry.getValue()
-        )).sorted((taskByStatus1, taskBtStatus2) -> taskByStatus1.getStatus().ordinal() - taskBtStatus2.getStatus().ordinal()).toList();
+    Map<TaskStatus, List<Task>> tasksByStatusMap = taskRepository.getTasks(limit, offset, description)
+            .stream()
+                .collect(Collectors.groupingBy(Task::getTaskStatus));
+
+        List<TasksByStatusDTO> result = Arrays.stream(TaskStatus.values())
+                .map(status -> new TasksByStatusDTO(
+                status,
+                tasksByStatusMap.getOrDefault(status, Collections.emptyList()) // Returns empty list if missing
+        ))
+                .sorted(Comparator.comparingInt(dto -> dto.getStatus().ordinal())) // Cleaner sorting syntax
+                .toList();
+
         return Response.ok(result).build();
     }
 
