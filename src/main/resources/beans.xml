@@ -5,7 +5,4 @@
            http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context
            http://www.springframework.org/schema/context/spring-context.xsd">
-
- <bean id="taskConverter" class="com.example.Kanban.Board.utilities.TaskConverter" />
- <bean id="userConverter" class="com.example.Kanban.Board.utilities.UserConverter" />
 </beans>

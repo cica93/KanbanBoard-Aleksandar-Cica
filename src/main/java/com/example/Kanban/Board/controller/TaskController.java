@@ -63,9 +63,10 @@ public class TaskController {
     }
 
     @PUT
-    @Path("/{id}")
+    @Path("/{id}/{version}")
     public Response update(
             @PathParam("id") Long id,
+            @PathParam("version") Integer version,
             @Valid Task task)
             throws TaskDoesNotExistException {
 
@@ -73,6 +74,7 @@ public class TaskController {
         return taskService.update(
                 jwt.getSubject(),
                 id,
+                version,
                 task
         );
     }

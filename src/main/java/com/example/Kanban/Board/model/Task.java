@@ -32,7 +32,6 @@ public class Task implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Version
     @ColumnDefault("0")
     @Column(nullable = false)
@@ -58,7 +57,6 @@ public class Task implements Serializable {
     @Column(name = "task_priority", nullable = false)
     private TaskPriority taskPriority;
 
-    @NotNull
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 

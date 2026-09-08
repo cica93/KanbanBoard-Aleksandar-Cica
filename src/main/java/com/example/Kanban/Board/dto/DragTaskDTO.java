@@ -1,13 +1,25 @@
 package com.example.Kanban.Board.dto;
 
+import org.eclipse.microprofile.graphql.Input;
+
 import com.example.Kanban.Board.model.TaskStatus;
 
+import jakarta.validation.constraints.NotNull;
+
+@Input("DragTaskInput")
 public class DragTaskDTO {
+
+    @NotNull
     private Long taskId;
+
+    @NotNull
     private TaskStatus taskStatus;
+
+    @NotNull
     private Integer taskOrder;
+
+    @NotNull
     private Integer taskVersion;
-    private TaskStatus prevTaskStatus;
 
 
     public void setTaskStatus(TaskStatus taskStatus) {
@@ -16,14 +28,6 @@ public class DragTaskDTO {
 
     public TaskStatus getTaskStatus() {
         return taskStatus;
-    }
-
-    public TaskStatus getPrevTaskStatus() {
-        return prevTaskStatus;
-    }
-
-    public void setPrevTaskStatus(TaskStatus prevTaskStatus) {
-        this.prevTaskStatus = prevTaskStatus;
     }
 
     public Long getTaskId() {

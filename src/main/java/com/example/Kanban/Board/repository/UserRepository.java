@@ -2,7 +2,6 @@ package com.example.Kanban.Board.repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import org.hibernate.query.NativeQuery;
@@ -59,7 +58,7 @@ public class UserRepository implements PanacheRepository<User> {
 
     public List<User> findByFullNameContainingIgnoreCase(
             String fullName) {
-        return findByEmailOrFullNameLike(null, fullName, false).toList();
+        return findByEmailOrFullNameLike(null, fullName, true).toList();
     }
 
     @Transactional
@@ -76,10 +75,5 @@ public class UserRepository implements PanacheRepository<User> {
         persist(user);
         flush();
         return user;
-    }
-
-    public long countByIdIn(Set<Long> ids) {
-
-        return count("id in ?1", ids);
     }
 }

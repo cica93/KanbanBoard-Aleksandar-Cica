@@ -1,6 +1,5 @@
 package com.example.Kanban.Board.service;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,22 +22,18 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
 
-
     public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
     }
 
     public Response get(Integer limit, Integer offset, String description) {
         List<TasksByStatusDTO> result = taskRepository.getTasks(limit, offset, description).stream()
-                .collect(Collectors.groupingBy(Task::getTaskStatus, LinkedHashMap::new,
-                        Collectors.toList())).entrySet()
+                .collect(Collectors.groupingBy(Task::getTaskStatus)).entrySet()
                 .stream()
                 .map(entry -> new TasksByStatusDTO(
                 entry.getKey(),
                 entry.getValue()
-        ))
-                .toList();
-
+        )).sorted((taskByStatus1, taskBtStatus2) -> taskByStatus1.getStatus().ordinal() - taskBtStatus2.getStatus().ordinal()).toList();
         return Response.ok(result).build();
     }
 
@@ -52,6 +47,7 @@ public class TaskService {
 
     public Response create(String userEmail, Task task) {
         task.setCreatedBy(userEmail);
+        task.setTaskOrder(0);
         return saveTask(userEmail, task);
     }
 
@@ -63,14 +59,13 @@ public class TaskService {
     }
 
     @Transactional
-    public Response update(String userEmail, Long id, Task task) throws OptimisticLockException, TaskDoesNotExistException {
+    public Response update(String userEmail, Long id, Integer version, Task task) throws OptimisticLockException, TaskDoesNotExistException {
         Task existingTask = taskRepository.findById(id);
         if (existingTask == null) {
             throw new TaskDoesNotExistException("Task not found");
         }
 
-        Integer dtoVersion = task.getVersion();
-        if (!existingTask.getVersion().equals(dtoVersion)) {
+        if (!existingTask.getVersion().equals(version)) {
             throw new OptimisticLockException(
                         "Task already modified"
             );
@@ -78,6 +73,8 @@ public class TaskService {
         task.setCreatedBy(existingTask.getCreatedBy());
         task.setUpdatedBy(userEmail);
         task.setTaskOrder(existingTask.getTaskOrder());
+        task.setVersion(version);
+        task.setId(id);
         return saveTask(userEmail, task);
     }
 
@@ -92,47 +89,44 @@ public class TaskService {
                     "Task already modified");
         }
 
-        TaskStatus prevTaskStatus = task.getTaskStatus();
         TaskStatus taskStatus = dragTaskDTO.getTaskStatus();
         task.setTaskStatus(taskStatus);
         task.setTaskOrder(dragTaskDTO.getTaskOrder());
         taskRepository.save(userEmail, task);
         taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
-        taskRepository.updateTaskOrderForStatus(task.getTaskOrder(), prevTaskStatus.ordinal(), false);
+        taskRepository.updateTaskOrderForStatus(task.getTaskOrder(), task.getTaskStatus().ordinal(), false);
         return Response.ok().entity(task).build();
 
     }
 
 
-    public Response patch(String userEmail, Long id, TaskPatchDTO taskDTO)
+    public Response patch(String userEmail, Long id, TaskPatchDTO taskPatchDTO)
             throws OptimisticLockException, TaskDoesNotExistException {
-        Task existingTask = taskRepository.findById(id);
-        if (existingTask == null) {
-            throw new TaskDoesNotExistException("Task not found");
-        }
-        if (!existingTask.getVersion().equals(taskDTO.getVersion())) {
+        Task existingTask = taskRepository.findByIdIncludingUsers(id).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
+
+        if (!existingTask.getVersion().equals(taskPatchDTO.getVersion())) {
                 throw new OptimisticLockException(
                         "Task already modified"
                 );
         }
-        if (taskDTO.getDescription().isPresent()) {
-            existingTask.setDescription(taskDTO.getDescription().get());
+        if (taskPatchDTO.getDescription().isPresent()) {
+            existingTask.setDescription(taskPatchDTO.getDescription().get());
         }
 
-        if (taskDTO.getTitle().isPresent()) {
-            existingTask.setTitle(taskDTO.getTitle().get());
+        if (taskPatchDTO.getTitle().isPresent()) {
+            existingTask.setTitle(taskPatchDTO.getTitle().get());
         }
 
-        if (taskDTO.getTaskStatus().isPresent()) {
-            existingTask.setTaskStatus(taskDTO.getTaskStatus().get());
+        if (taskPatchDTO.getTaskStatus().isPresent()) {
+            existingTask.setTaskStatus(taskPatchDTO.getTaskStatus().get());
         }
 
-        if (taskDTO.getTaskPriority().isPresent()) {
-            existingTask.setTaskPriority(taskDTO.getTaskPriority().get());
+        if (taskPatchDTO.getTaskPriority().isPresent()) {
+            existingTask.setTaskPriority(taskPatchDTO.getTaskPriority().get());
         }
 
-        if (taskDTO.getUsers().isPresent()) {
-            existingTask.setUsers(taskDTO.getUsers().get());
+        if (taskPatchDTO.getUsers().isPresent()) {
+            existingTask.setUsers(taskPatchDTO.getUsers().get());
         }
         return saveTask(userEmail, existingTask);
     }
@@ -149,7 +143,6 @@ public class TaskService {
         }
 
         taskRepository.delete(task);
-
         return Response.ok().entity(Map.of("deleted", 1)).build();
     }
 }
