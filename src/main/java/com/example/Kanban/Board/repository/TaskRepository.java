@@ -1,20 +1,18 @@
 package com.example.Kanban.Board.repository;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.hibernate.query.NativeQuery;
+import org.jdbi.v3.core.Jdbi;
 
 import com.example.Kanban.Board.dto.DragTaskDTO;
+import com.example.Kanban.Board.mapper.TaskRowMapper;
 import com.example.Kanban.Board.model.Task;
-import com.example.Kanban.Board.model.TaskPriority;
-import com.example.Kanban.Board.model.TaskStatus;
 import com.example.Kanban.Board.model.User;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.SystemException;
@@ -26,10 +24,12 @@ public class TaskRepository implements PanacheRepository<Task> {
 
     private final EntityManager entityManager;
     private final TransactionManager transactionManager;
+    private final Jdbi jdbi;
 
-    public TaskRepository(EntityManager entityManager, TransactionManager transactionManager) {
+    public TaskRepository(EntityManager entityManager, TransactionManager transactionManager, Jdbi jdbi) {
         this.entityManager = entityManager;
         this.transactionManager = transactionManager;
+        this.jdbi = jdbi;
     }
 
     @Transactional
@@ -50,15 +50,11 @@ public class TaskRepository implements PanacheRepository<Task> {
     }
 
     public Optional<Task> findByIdIncludingUsers(Long id) {
-        String sql = "SELECT t.id, t.task_priority, t.task_order, t.task_status, t.created_by, t.updated_by, t.version, t.description, t.title, u.id as user_id, u.email, "
-                + "u.full_name, u.image from task t LEFT JOIN user_task ut on ut.task_id = t.id "
+        String sql = this.selectTaskQuery() + " FROM task t LEFT JOIN user_task ut on ut.task_id = t.id "
                 + "LEFT JOIN user u on u.id = ut.user_id WHERE t.id = :id";
+        return jdbi.withHandle(handle -> handle.createQuery(sql).bind("id", id)
+                .registerRowMapper(new TaskRowMapper()).mapTo(Task.class).findFirst());
 
-        NativeQuery<Task> query = entityManager.createNativeQuery(sql).unwrap(NativeQuery.class);
-
-        query.setParameter("id", id);
-
-        return this.extractUser(query).stream().findFirst();
     }
 
     @Transactional
@@ -107,61 +103,51 @@ public class TaskRepository implements PanacheRepository<Task> {
                 .executeUpdate();
     }
 
-    private List<Task> extractUser(NativeQuery<Task> query) {
-        query.setTupleTransformer((tuple, aliases) -> {
-            Task dto = new Task();
-            dto.setId(((Number) tuple[0]).longValue());
-            dto.setTaskPriority(TaskPriority.values()[((Number) tuple[1]).intValue()]);
-            dto.setTaskOrder(((Number) tuple[2]).intValue());
-            dto.setTaskStatus(TaskStatus.values()[((Number) tuple[3]).intValue()]);
-            dto.setCreatedBy((String) tuple[4]);
-            dto.setUpdatedBy((String) tuple[5]);
-            dto.setVersion(((Number) tuple[6]).intValue());
-            dto.setDescription((String) tuple[7]);
-            dto.setTitle((String) tuple[8]);
-            Long userId = tuple[9] != null ? ((Number) tuple[9]).longValue() : null;
-            if (userId != null) {
-                User user = new User();
-                user.setId(userId);
-                user.setEmail((String) tuple[10]);
-                user.setFullName((String) tuple[11]);
-                user.setImage((byte[]) tuple[12]);
-                dto.setUsers(new ArrayList<>());
-                dto.getUsers().add(user);
-            }
-            return dto;
-        });
-
-        return query.getResultList();
+    private String selectTaskQuery() {
+        return "SELECT t.id, t.task_priority, t.task_order, t.task_status, t.version, t.description, t.title, u.id as user_id, u.email as user_email, "
+                + "u.full_name as user_full_name, u.image as user_image";
     }
 
-    @SuppressWarnings("unchecked")
-    @Transactional
+
+
     public List<Task> getTasks(Integer limit, Integer offset, String description) {
-        String sql = "WITH all_tasks as (SELECT * , ROW_NUMBER() OVER (PARTITION BY task_status ORDER BY task_order) AS int_row "
-                + "FROM task WHERE (:description IS NULL OR LOWER(description) like LOWER(CONCAT('%', :description, '%')) "
-                + "OR LOWER(title) like LOWER(CONCAT('%', :description, '%')))) "
-                + "SELECT t.id, t.task_priority, t.task_order, t.task_status, t.created_by, t.updated_by, t.version, t.description, t.title, u.id as user_id, u.email, "
-                + "u.full_name, u.image from all_tasks t LEFT JOIN user_task ut on ut.task_id = t.id "
-                + "LEFT JOIN user u on u.id = ut.user_id WHERE t.int_row >= :start AND t.int_row < :end ORDER BY t.int_row";
-        NativeQuery<Task> query = entityManager.createNativeQuery(sql).unwrap(NativeQuery.class);
+        try {
+            String sql = "WITH all_tasks as (SELECT * , ROW_NUMBER() OVER (PARTITION BY task_status ORDER BY task_order) AS int_row "
+                    + "FROM task WHERE (:description IS NULL OR LOWER(description) like LOWER(CONCAT('%', :description, '%')) "
+                    + "OR LOWER(title) like LOWER(CONCAT('%', :description, '%')))) "
+                    + this.selectTaskQuery() + " FROM all_tasks t LEFT JOIN user_task ut on ut.task_id = t.id "
+                    + "LEFT JOIN user u on u.id = ut.user_id WHERE t.int_row >= :start AND t.int_row < :end ORDER BY t.int_row";
 
-        query.setParameter("description", description);
-        query.setParameter("start", offset + 1);
-        query.setParameter("end", offset + limit + 1);
+            List<Task> tasksFromDataBase = jdbi.withHandle(h -> h.createQuery(sql)
+                    .bind("description", description)
+                    .bind("start", offset + 1)
+                    .bind("end", offset + limit + 1)
+                    .registerRowMapper(new TaskRowMapper())
+                    .mapTo(Task.class)
+                    .list());
 
-        List<Task> resultList = this.extractUser(query).stream()
-                .collect(Collectors.groupingBy(
-                        Task::getId,
-                        LinkedHashMap::new,
-                        Collectors.reducing((task1, task2) -> {
-                            task1.getUsers().addAll(task2.getUsers());
-                            return task1;
-                        })
-                )).values().stream().map(a -> a.get())
-                .filter(v -> v != null)
-                .collect(Collectors.toList());
-        return resultList;
+            return tasksFromDataBase.stream()
+                    .collect(Collectors.groupingBy(
+                            Task::getId,
+                            Collectors.reducing((task1, task2) -> {
+                                task1.getUsers().addAll(task2.getUsers());
+                                return task1;
+                            })))
+                    .values()
+                    .stream()
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
 
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            Log.errorf(
+                    e,
+                    "Failed to get tasks. limit=%d, offset=%d, description=%s",
+                    limit,
+                    offset,
+                    description);
+
+            throw e;
+        }
     }
 }

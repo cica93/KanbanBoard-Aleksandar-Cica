@@ -1,5 +1,4 @@
 package com.example.Kanban.Board.controller;
-import java.sql.SQLException;
 import java.util.List;
 
 import org.eclipse.microprofile.graphql.DefaultValue;
@@ -50,26 +49,32 @@ public class TaskGraphqlController {
         return task;
     }
 
+    @Mutation("patchTask")
+    public TaskModify patchTask(@NotNull @Name("id") Long id, @NotNull @Name("taskPatchDTO") TaskModify taskPatchDTO) {
+        // Task task = (Task) taskService.patch(jwt.getSubject(), id, taskPatchDTO).getEntity();
+        return taskPatchDTO;
+    }
+
     @Mutation("updateTask")
-    public Task updateTask(@NotNull @Name("id") Integer id, @NotNull @Name("version") Integer version,
+    public Task updateTask(@NotNull @Name("id") Long id, @NotNull @Name("version") Integer version,
             @NotNull @Name("task") TaskModify taskInput) throws TaskDoesNotExistException {
         ObjectMapper objectMapper = new ObjectMapper();
-        return (Task) taskService.update(jwt.getSubject(), id.longValue(), version, objectMapper.convertValue(taskInput, Task.class)).getEntity();
+        return (Task) taskService.update(jwt.getSubject(), id, version, objectMapper.convertValue(taskInput, Task.class)).getEntity();
     }
 
     @Mutation("deleteTask")
-    public Task deleteTask(@NotNull @Name("id") Integer id, @NotNull @Name("version") Integer version) throws TaskDoesNotExistException, OptimisticLockException {
-        return (Task) taskService.delete(id.longValue(), version).getEntity();
+    public Task deleteTask(@NotNull @Name("id") Long id, @NotNull @Name("version") Integer version) throws TaskDoesNotExistException, OptimisticLockException {
+        return (Task) taskService.delete(id, version).getEntity();
     }
 
     @Query("getTaskById")
-    public Task getTaskById(@NotNull @Name("id") Integer id) throws TaskDoesNotExistException {
-        return (Task) taskService.getById(id.longValue()).getEntity();
+    public Task getTaskById(@NotNull @Name("id") Long id) throws TaskDoesNotExistException {
+        return (Task) taskService.getById(id).getEntity();
      }
 
     @Query("getTasks")
     @SuppressWarnings("unchecked")
-    public List<TasksByStatusDTO> getTasks(String description, @DefaultValue("20") Integer limit, @DefaultValue("0") Integer offset) throws SQLException {
+    public List<TasksByStatusDTO> getTasks(String description, @DefaultValue("20") Integer limit, @DefaultValue("0") Integer offset) {
         return (List<TasksByStatusDTO>) taskService
                 .get(limit, offset, description).getEntity();
     }

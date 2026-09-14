@@ -4,61 +4,67 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.hibernate.query.NativeQuery;
-
 import com.example.Kanban.Board.model.User;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
-
 
 @ApplicationScoped
 public class UserRepository implements PanacheRepository<User> {
 
     private final EntityManager entityManager;
-    private final ObjectMapper objectMapper;
 
-    public UserRepository(EntityManager entityManager, ObjectMapper objectMapper) {
+    public UserRepository(EntityManager entityManager) {
         this.entityManager = entityManager;
-        this.objectMapper = objectMapper;
     }
 
-    private Stream<User> findByEmailOrFullNameLike(String email, String fullName, boolean includePassword) {
-        String sql = "SELECT * FROM user WHERE (:email IS NULL OR email = :email) AND (:fullName IS NULL OR LOWER(full_name) LIKE LOWER(CONCAT('%',:fullName,'%')))";
-        NativeQuery<User> query = entityManager.createNativeQuery(sql).unwrap(NativeQuery.class);
-        query.setParameter("email", email);
-        query.setParameter("fullName", fullName);
-        query.setTupleTransformer((tuple, aliases) -> {
-            User dto = new User();
-            dto.setId(((Number) tuple[0]).longValue());
-            dto.setFullName((String) tuple[1]);
-            dto.setEmail((String) tuple[2]);
-            if (includePassword) {
-                dto.setPassword((String) tuple[3]);
-            }
-            dto.setToken((String) tuple[4]);
-            try {
-                dto.setImage(this.objectMapper.writeValueAsBytes(tuple[5]));
-            } catch (JsonProcessingException ex) {
-                System.getLogger(UserRepository.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
-            }
-            return dto;
-        });
-        return query.getResultStream();
+    private Stream<User> findAllByEmailOrFullNameLike(String email, String fullName) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+
+        CriteriaQuery<User> query
+                = cb.createQuery(User.class);
+
+        Root<User> userRoot = query.from(User.class);
+
+        query.select(
+                cb.construct(
+                        User.class,
+                        userRoot.get("id"),
+                        userRoot.get("email"),
+                        userRoot.get("fullName"),
+                        userRoot.get("token"),
+                        userRoot.get("password")
+                )
+        );
+
+        if (email != null) {
+            query.where(
+                    cb.equal(userRoot.get("email"), email));
+        } else {
+            query.where(
+                    cb.like(userRoot.get("fullName"), "%" + fullName + "%"));
+            query.orderBy(
+                    cb.asc(userRoot.get("id"))
+            );
+        }
+
+        return entityManager
+                .createQuery(query).getResultStream();
     }
 
 
     public Optional<User> findByEmail(String email) {
-        return this.findByEmailOrFullNameLike(email, "", true).findFirst();
+        return this.findAllByEmailOrFullNameLike(email, null).findFirst();
     }
 
     public List<User> findByFullNameContainingIgnoreCase(
             String fullName) {
-        return findByEmailOrFullNameLike(null, fullName, true).toList();
+        return findAllByEmailOrFullNameLike(null, fullName).toList();
     }
 
     @Transactional

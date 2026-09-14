@@ -2,7 +2,7 @@ package com.example.Kanban.Board.service;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,17 +30,15 @@ public class TaskService {
     }
 
     public Response get(Integer limit, Integer offset, String description) {
-    Map<TaskStatus, List<Task>> tasksByStatusMap = taskRepository.getTasks(limit, offset, description)
-            .stream()
-                .collect(Collectors.groupingBy(Task::getTaskStatus));
+
+        Map<TaskStatus, List<Task>> tasksByStatusMap = taskRepository.getTasks(limit, offset, description)
+                .stream().collect(Collectors.groupingBy(Task::getTaskStatus, LinkedHashMap::new, Collectors.toList()));
 
         List<TasksByStatusDTO> result = Arrays.stream(TaskStatus.values())
                 .map(status -> new TasksByStatusDTO(
                 status,
-                tasksByStatusMap.getOrDefault(status, Collections.emptyList()) // Returns empty list if missing
-        ))
-                .sorted(Comparator.comparingInt(dto -> dto.getStatus().ordinal())) // Cleaner sorting syntax
-                .toList();
+                tasksByStatusMap.getOrDefault(status, Collections.emptyList())
+        )).toList();
 
         return Response.ok(result).build();
     }
@@ -53,6 +51,7 @@ public class TaskService {
         return Response.ok(task).build();
     }
 
+    @Transactional
     public Response create(String userEmail, Task task) {
         task.setCreatedBy(userEmail);
         task.setTaskOrder(0);
@@ -108,6 +107,7 @@ public class TaskService {
     }
 
 
+    @Transactional
     public Response patch(String userEmail, Long id, TaskPatchDTO taskPatchDTO)
             throws OptimisticLockException, TaskDoesNotExistException {
         Task existingTask = taskRepository.findByIdIncludingUsers(id).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));

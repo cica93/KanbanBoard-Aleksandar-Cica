@@ -31,11 +31,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) {
         String path = requestContext.getUriInfo().getPath();
-        if (PUBLIC_PATHS.contains(path) || path.contains("/api/users/has-email")) {
-            return;
-        }
-
-        if ("OPTIONS".equalsIgnoreCase(requestContext.getMethod())) {
+        if (PUBLIC_PATHS.contains(path) || path.contains("/api/users/has-email") || "OPTIONS".equalsIgnoreCase(requestContext.getMethod())) {
             return;
         }
 

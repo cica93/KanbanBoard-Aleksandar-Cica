@@ -29,8 +29,7 @@ public class InitClass {
 
 
       @PostConstruct
-      private void init() {
-          if (userRepository.count() == 0) {
+    private void init() {
               List<User> users = new ArrayList<>();
               User user1 = createUser("Pera Peric", "pera@gmail.com", "Pera123!");
               users.add(user1);
@@ -43,7 +42,6 @@ public class InitClass {
                   saveTask("Task " + i, "Task description " + i, i % 3 == 0 ? TaskStatus.TO_DO
                           : i % 3 == 1 ? TaskStatus.IN_PROGRESS : TaskStatus.DONE,
                           random == 0 ? TaskPriority.LOW : random == 1 ? TaskPriority.MED : TaskPriority.HIGH, i / 3, users);
-              }
           }
       }
     

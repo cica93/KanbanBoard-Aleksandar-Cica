@@ -32,7 +32,9 @@ public class LoginService {
             throw new BadCredentialsException("Password and email must be provided");
         }
         User userFromDataBase = userRepository.findByEmail(user.getEmail())
-        .orElseThrow(() -> new BadCredentialsException("User with email "+user.getEmail()+" doesn't exist!"));
+                .orElseThrow(
+                        () -> new BadCredentialsException("User with email " + user.getEmail() + " doesn't exist!"));
+        userFromDataBase.setTasks(null);
         boolean match = BCrypt.checkpw(user.getPassword(), userFromDataBase.getPassword());
         if (!match) {
             throw new BadCredentialsException("Wrong password!");

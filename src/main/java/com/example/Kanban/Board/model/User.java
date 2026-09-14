@@ -55,6 +55,17 @@ public class User implements Serializable {
     @ManyToMany(mappedBy = "users")
     private List<Task> tasks;
 
+    public User() {
+    }
+
+    public User(Long id, String email, String fullName, String token, String password) {
+        this.id = id;
+        this.email = email;
+        this.fullName = fullName;
+        this.token = token;
+        this.password = password;
+    }
+
     public Long getId() {
         return id;
     }

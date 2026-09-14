@@ -2,6 +2,7 @@ package com.example.Kanban.Board.utilities;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Set;
 
 import javax.crypto.SecretKey;
 
@@ -25,26 +26,26 @@ public class JwtTokenUtil {
     public static final String DEFAULT_SECRET = "my-super-secret-key-that-is-at-least-32-characters-long";
     public static final String BEARER_PREFIX = "Bearer ";
 
+
     @ConfigProperty(name = "jwt.secret", defaultValue = DEFAULT_SECRET)
     String secret;
 
     public String createToken(String email) {
-        Date now = new Date();
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + 2L * 60L * 60L * 1000L))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS384)
-                .compact();
+        return createToken(email, 2);
     }
 
     public String createToken(String email, int durationInHours) {
         Date now = new Date();
+        SecretKey key = Keys.hmacShaKeyFor(
+                secret.getBytes(StandardCharsets.UTF_8)
+        );
+
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(now)
+                .claim("roles", Set.of("USER", "ADMIN"))
                 .setExpiration(new Date(now.getTime() + durationInHours * 3600_000L))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS384)
+                .signWith(key, SignatureAlgorithm.HS384)
                 .compact();
     }
 
@@ -73,16 +74,6 @@ public class JwtTokenUtil {
         } catch (ExpiredJwtException | MalformedJwtException | UnsupportedJwtException | SignatureException | IllegalArgumentException e) {
             throw new SecurityException("Invalid or expired JWT token "+ e.getMessage());
         }
-    }
-
-    public static String createTokenStatic(String email, int durationInHours) {
-        Date now = new Date();
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + durationInHours * 3600_000L))
-                .signWith(getSigningKey(DEFAULT_SECRET), SignatureAlgorithm.HS384)
-                .compact();
     }
 
     public static String extractSubjectStatic(String authorizationHeader) {

@@ -1,6 +1,5 @@
 package com.example.Kanban.Board.controller;
 
-
 import com.example.Kanban.Board.service.UserService;
 
 import jakarta.ws.rs.GET;
