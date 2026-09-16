@@ -1,8 +1,8 @@
 package com.example.Kanban.Board.service;
 
+
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,8 +31,9 @@ public class TaskService {
 
     public Response get(Integer limit, Integer offset, String description) {
 
-        Map<TaskStatus, List<Task>> tasksByStatusMap = taskRepository.getTasks(limit, offset, description)
-                .stream().collect(Collectors.groupingBy(Task::getTaskStatus, LinkedHashMap::new, Collectors.toList()));
+        List<Task> tasks = taskRepository.getTasks(limit, offset, description);
+
+        Map<TaskStatus, List<Task>> tasksByStatusMap = tasks.stream().collect(Collectors.groupingBy(Task::getTaskStatus, Collectors.toList()));
 
         List<TasksByStatusDTO> result = Arrays.stream(TaskStatus.values())
                 .map(status -> new TasksByStatusDTO(

@@ -1,5 +1,6 @@
 package com.example.Kanban.Board.repository;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -12,7 +13,6 @@ import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.User;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.SystemException;
@@ -50,8 +50,8 @@ public class TaskRepository implements PanacheRepository<Task> {
     }
 
     public Optional<Task> findByIdIncludingUsers(Long id) {
-        String sql = this.selectTaskQuery() + " FROM task t LEFT JOIN user_task ut on ut.task_id = t.id "
-                + "LEFT JOIN user u on u.id = ut.user_id WHERE t.id = :id";
+        String sql = this.selectTaskQuery() + " FROM task t LEFT JOIN user_task ut ON ut.task_id = t.id "
+                + "LEFT JOIN user u ON u.id = ut.user_id WHERE t.id = :id";
         return jdbi.withHandle(handle -> handle.createQuery(sql).bind("id", id)
                 .registerRowMapper(new TaskRowMapper()).mapTo(Task.class).findFirst());
 
@@ -88,13 +88,13 @@ public class TaskRepository implements PanacheRepository<Task> {
     }
 
     @Transactional
-    public void updateTaskStatus(DragTaskDTO dragTaskDTO, User user) {
+    public int updateTaskStatus(DragTaskDTO dragTaskDTO, User user) {
         if (dragTaskDTO.getTaskOrder() == null) {
-            return;
+            return 0;
         }
         String sql = "UPDATE task SET task_order = :taskOrder, task_status = :taskStatus, updated_by = :updatedBy WHERE id = :taskId AND version = :version";
 
-        entityManager.createNativeQuery(sql)
+        return entityManager.createNativeQuery(sql)
                 .setParameter("taskOrder", dragTaskDTO.getTaskOrder())
                 .setParameter("taskStatus", dragTaskDTO.getTaskStatus().ordinal())
                 .setParameter("updatedBy", user.getEmail())
@@ -104,19 +104,19 @@ public class TaskRepository implements PanacheRepository<Task> {
     }
 
     private String selectTaskQuery() {
-        return "SELECT t.id, t.task_priority, t.task_order, t.task_status, t.version, t.description, t.title, u.id as user_id, u.email as user_email, "
+        return "SELECT t.id, t.int_row, t.task_priority, t.task_order,  t.task_status, t.version, t.description, t.title, u.id as user_id, u.email as user_email, "
                 + "u.full_name as user_full_name, u.image as user_image";
     }
 
 
 
     public List<Task> getTasks(Integer limit, Integer offset, String description) {
-        try {
             String sql = "WITH all_tasks as (SELECT * , ROW_NUMBER() OVER (PARTITION BY task_status ORDER BY task_order) AS int_row "
                     + "FROM task WHERE (:description IS NULL OR LOWER(description) like LOWER(CONCAT('%', :description, '%')) "
                     + "OR LOWER(title) like LOWER(CONCAT('%', :description, '%')))) "
                     + this.selectTaskQuery() + " FROM all_tasks t LEFT JOIN user_task ut on ut.task_id = t.id "
                     + "LEFT JOIN user u on u.id = ut.user_id WHERE t.int_row >= :start AND t.int_row < :end ORDER BY t.int_row";
+
 
             List<Task> tasksFromDataBase = jdbi.withHandle(h -> h.createQuery(sql)
                     .bind("description", description)
@@ -129,6 +129,7 @@ public class TaskRepository implements PanacheRepository<Task> {
             return tasksFromDataBase.stream()
                     .collect(Collectors.groupingBy(
                             Task::getId,
+                            LinkedHashMap::new,
                             Collectors.reducing((task1, task2) -> {
                                 task1.getUsers().addAll(task2.getUsers());
                                 return task1;
@@ -136,18 +137,6 @@ public class TaskRepository implements PanacheRepository<Task> {
                     .values()
                     .stream()
                     .map(Optional::get)
-                    .collect(Collectors.toList());
-
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            Log.errorf(
-                    e,
-                    "Failed to get tasks. limit=%d, offset=%d, description=%s",
-                    limit,
-                    offset,
-                    description);
-
-            throw e;
-        }
+                .collect(Collectors.toList());
     }
 }
