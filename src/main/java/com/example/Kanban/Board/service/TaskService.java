@@ -45,10 +45,7 @@ public class TaskService {
     }
 
     public Response getById(Long id) throws TaskDoesNotExistException {
-        Task task = taskRepository.findById(id);
-        if (task == null) {
-            throw new TaskDoesNotExistException("Task not found");
-        }
+        Task task = findByIdOrElseThrow(id);
         return Response.ok(task).build();
     }
 
@@ -68,16 +65,8 @@ public class TaskService {
 
     @Transactional
     public Response update(String userEmail, Long id, Integer version, Task task) throws OptimisticLockException, TaskDoesNotExistException {
-        Task existingTask = taskRepository.findById(id);
-        if (existingTask == null) {
-            throw new TaskDoesNotExistException("Task not found");
-        }
-
-        if (!existingTask.getVersion().equals(version)) {
-            throw new OptimisticLockException(
-                        "Task already modified"
-            );
-        }
+        Task existingTask = findByIdOrElseThrow(id);
+        checkVersions(existingTask.getVersion(), version);
         task.setCreatedBy(existingTask.getCreatedBy());
         task.setUpdatedBy(userEmail);
         task.setTaskOrder(existingTask.getTaskOrder());
@@ -89,14 +78,9 @@ public class TaskService {
     @Transactional
     public Response dragTask(String userEmail, DragTaskDTO dragTaskDTO) throws TaskDoesNotExistException {
         Task task = taskRepository.findByIdIncludingUsers(dragTaskDTO.getTaskId())
-                .orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
+                .orElseThrow(() -> new TaskDoesNotExistException(dragTaskDTO.getTaskId()));
 
-
-        if (!task.getVersion().equals(dragTaskDTO.getTaskVersion())) {
-            throw new OptimisticLockException(
-                    "Task already modified");
-        }
-
+        checkVersions(task.getVersion(), dragTaskDTO.getTaskVersion());
         TaskStatus taskStatus = dragTaskDTO.getTaskStatus();
         task.setTaskStatus(taskStatus);
         task.setTaskOrder(dragTaskDTO.getTaskOrder());
@@ -111,13 +95,8 @@ public class TaskService {
     @Transactional
     public Response patch(String userEmail, Long id, TaskPatchDTO taskPatchDTO)
             throws OptimisticLockException, TaskDoesNotExistException {
-        Task existingTask = taskRepository.findByIdIncludingUsers(id).orElseThrow(() -> new TaskDoesNotExistException("Task not found"));
-
-        if (!existingTask.getVersion().equals(taskPatchDTO.getVersion())) {
-                throw new OptimisticLockException(
-                        "Task already modified"
-                );
-        }
+        Task existingTask = taskRepository.findByIdIncludingUsers(id).orElseThrow(() -> new TaskDoesNotExistException(id));
+        checkVersions(existingTask.getVersion(), taskPatchDTO.getVersion());
         if (taskPatchDTO.getDescription().isPresent()) {
             existingTask.setDescription(taskPatchDTO.getDescription().get());
         }
@@ -142,16 +121,23 @@ public class TaskService {
 
     @Transactional
     public Response delete(Long id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
-        Task task = taskRepository.findById(id);
-        if (task == null) {
-            throw new TaskDoesNotExistException("Task not found");
-        }
-
-        if (!task.getVersion().equals(version)) {
-            throw new OptimisticLockException("Task already modified");
-        }
-
+        Task task = findByIdOrElseThrow(id);
+        checkVersions(task.getVersion(), version);
         taskRepository.delete(task);
         return Response.ok().entity(Map.of("deleted", 1)).build();
+    }
+
+    private Task findByIdOrElseThrow(Long id) throws TaskDoesNotExistException {
+        Task task = taskRepository.findById(id);
+        if (task == null) {
+            throw new TaskDoesNotExistException(id);
+        }
+        return task;
+    }
+
+    private void checkVersions(Integer databaseVersion, Integer taskVersion) throws OptimisticLockException {
+        if (!databaseVersion.equals(taskVersion)) {
+            throw new OptimisticLockException("Task already modified");
+        }
     }
 }

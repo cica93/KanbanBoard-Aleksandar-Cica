@@ -3,6 +3,7 @@ package com.example.Kanban.Board.controller;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.hibernate.sql.ast.SqlTreeCreationException;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 
 import com.example.Kanban.Board.exceptions.BadCredentialsException;
@@ -61,6 +62,13 @@ public class GlobalExceptionHandler
             return Response
                     .status(Response.Status.BAD_REQUEST)
                     .entity(new ErrorResponse(ex.getMessage()))
+                    .build();
+        }
+
+        if (ex instanceof SqlTreeCreationException sqlTree) {
+            sqlTree.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse(sqlTree.getLocalizedMessage()))
                     .build();
         }
 

@@ -1,9 +1,10 @@
 package com.example.Kanban.Board.repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
+import com.example.Kanban.Board.dto.PageResponse;
 import com.example.Kanban.Board.model.User;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
@@ -11,7 +12,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Path;
 import jakarta.transaction.Transactional;
 
 @ApplicationScoped
@@ -23,8 +26,9 @@ public class UserRepository implements PanacheRepository<User> {
         this.entityManager = entityManager;
     }
 
-    private Stream<User> findAllByEmailOrFullNameLike(String email, String fullName) {
+    private PageResponse<User> findAllByEmailOrFullNameLike(String email, String fullName, Integer limit, Integer offset, String columnSort, String direction) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        Long total = 0L;
 
         CriteriaQuery<User> query
                 = cb.createQuery(User.class);
@@ -46,25 +50,40 @@ public class UserRepository implements PanacheRepository<User> {
             query.where(
                     cb.equal(userRoot.get("email"), email));
         } else {
-            query.where(
-                    cb.like(userRoot.get("fullName"), "%" + fullName + "%"));
+            CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+            Root<User> countRoot = countQuery.from(User.class);
+            countQuery.select(cb.count(countRoot)).where(buildPredicates(cb, countRoot, fullName).toArray(Predicate[]::new));
+            query.where(buildPredicates(cb, userRoot, fullName).toArray(Predicate[]::new));
             query.orderBy(
-                    cb.asc(userRoot.get("id"))
-            );
+                    "desc".equalsIgnoreCase(direction)
+                            ? 
+                            cb.desc(getSortRoot(userRoot,columnSort))
+                            : 
+                            cb.asc(getSortRoot(userRoot,columnSort))
+                );
+           
+
+            total = entityManager
+                    .createQuery(countQuery)
+                    .getSingleResult();
         }
 
-        return entityManager
-                .createQuery(query).getResultStream();
+        List<User> users = entityManager
+                        .createQuery(query)
+                        .setFirstResult(offset == null ? 0 : offset)
+                        .setMaxResults(limit == null ? 20: limit)
+                        .getResultList();
+        return new PageResponse<>(users, total);
     }
 
 
     public Optional<User> findByEmail(String email) {
-        return this.findAllByEmailOrFullNameLike(email, null).findFirst();
+        return this.findAllByEmailOrFullNameLike(email, null, 1, 0, null, null).getContent().stream().findFirst();
     }
 
-    public List<User> findByFullNameContainingIgnoreCase(
-            String fullName) {
-        return findAllByEmailOrFullNameLike(null, fullName).toList();
+    public PageResponse<User> findByFullNameContainingIgnoreCase(
+            String fullName, Integer limit, Integer offset, String columnSort, String direction) {
+        return findAllByEmailOrFullNameLike(null, fullName, limit, offset, columnSort, direction);
     }
 
     @Transactional
@@ -81,5 +100,28 @@ public class UserRepository implements PanacheRepository<User> {
         persist(user);
         flush();
         return user;
+    }
+
+   private List<Predicate> buildPredicates(CriteriaBuilder cb,Root<User> userRoot, String search) {
+
+    List<Predicate> predicates = new ArrayList<>();
+
+    if (search != null && !search.isBlank()) {
+
+        String pattern = "%" + search.trim().toLowerCase() + "%";
+
+        predicates.add(
+                cb.like(
+                    cb.lower(userRoot.get("fullName")),
+                    pattern
+                )
+        );
+    }
+
+    return predicates;
+}
+    
+    private Path<Object> getSortRoot(Root<User> userRoot, String columnSort) {
+        return userRoot.get(columnSort == null ? "id" : columnSort);
     }
 }

@@ -24,8 +24,6 @@ public class LoginService {
         this.durationInHours = durationInHours;
     }
 
-
-
     public Response login(User user) throws BadCredentialsException {
         if (user.getEmail() == null || user.getEmail().isBlank()
                 || user.getPassword() == null || user.getPassword().isBlank()) {

@@ -1,7 +1,7 @@
 package com.example.Kanban.Board.exceptions;
 
 public class TaskDoesNotExistException extends Exception {
-    public TaskDoesNotExistException(String message) {
-        super(message);
+    public TaskDoesNotExistException(Long id) {
+        super("Task with id " + id + " doesn't exist");
     }
 }

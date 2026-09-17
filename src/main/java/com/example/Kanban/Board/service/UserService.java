@@ -1,7 +1,6 @@
 package com.example.Kanban.Board.service;
 
-import java.util.List;
-
+import com.example.Kanban.Board.dto.PageResponse;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.utilities.JwtTokenUtil;
@@ -20,9 +19,9 @@ public class UserService {
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
-    public Response get(String keyword) {
-        List<User> data
-                = userRepository.findByFullNameContainingIgnoreCase(keyword);
+    public Response get(String keyword, Integer limit, Integer offset, String columnSort, String direction) {
+        PageResponse<User> data
+                = userRepository.findByFullNameContainingIgnoreCase(keyword, limit, offset, columnSort, direction);
         return Response.ok(data).build();
     }
 

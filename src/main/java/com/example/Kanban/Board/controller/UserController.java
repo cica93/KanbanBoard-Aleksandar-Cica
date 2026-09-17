@@ -2,6 +2,7 @@ package com.example.Kanban.Board.controller;
 
 import com.example.Kanban.Board.service.UserService;
 
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
@@ -24,8 +25,13 @@ public class UserController {
     }
 
     @GET
-    public Response get(@QueryParam("keyword") String keyword) {
-        return userService.get(keyword);
+    public Response get(
+            @QueryParam("keyword") String keyword,
+            @QueryParam("limit") @DefaultValue("25") Integer limit,
+            @QueryParam("offset") @DefaultValue("0")  Integer offset,
+            @QueryParam("columnSort") @DefaultValue("id") String columnSort,
+            @QueryParam("direction") @DefaultValue("asc")  String direction ) {
+        return userService.get(keyword, limit, offset, columnSort, direction);
     }
 
     @GET

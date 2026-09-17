@@ -118,21 +118,19 @@ public class TaskRepository implements PanacheRepository<Task> {
                     + "LEFT JOIN user u on u.id = ut.user_id WHERE t.int_row >= :start AND t.int_row < :end ORDER BY t.int_row";
 
 
-            List<Task> tasksFromDataBase = jdbi.withHandle(h -> h.createQuery(sql)
+        return jdbi.withHandle(h -> h.createQuery(sql)
                     .bind("description", description)
                     .bind("start", offset + 1)
                     .bind("end", offset + limit + 1)
                     .registerRowMapper(new TaskRowMapper())
                     .mapTo(Task.class)
-                    .list());
-
-            return tasksFromDataBase.stream()
+                .list()).stream()
                     .collect(Collectors.groupingBy(
                             Task::getId,
                             LinkedHashMap::new,
-                            Collectors.reducing((task1, task2) -> {
-                                task1.getUsers().addAll(task2.getUsers());
-                                return task1;
+                        Collectors.reducing((acc, curr) -> {
+                            acc.getUsers().addAll(curr.getUsers());
+                            return acc;
                             })))
                     .values()
                     .stream()
