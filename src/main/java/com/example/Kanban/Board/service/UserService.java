@@ -1,6 +1,10 @@
 package com.example.Kanban.Board.service;
 
+import java.util.List;
+
 import com.example.Kanban.Board.dto.PageResponse;
+import com.example.Kanban.Board.filters.Filter;
+import com.example.Kanban.Board.filters.Operator;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.utilities.JwtTokenUtil;
@@ -19,18 +23,19 @@ public class UserService {
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
-    public Response get(String keyword, Integer limit, Integer offset, String columnSort, String direction) {
+    public Response get(String fullName, Integer limit, Integer offset, String columnSort, String direction) {
         PageResponse<User> data
-                = userRepository.findByFullNameContainingIgnoreCase(keyword, limit, offset, columnSort, direction);
+                = userRepository.findByFilters(List.of(fullName == null ? null : new Filter("fullName", Operator.CONTAINS, fullName)), limit, offset, columnSort, direction, true);
         return Response.ok(data).build();
     }
 
     public Response hasMail(String email) {
-        return Response.ok(userRepository.findByEmail(email).isPresent()).build();
+        boolean isPresent = userRepository.findByEmail(email).isPresent();
+        return Response.ok(isPresent).build();
     }
 
     public Response currentUser(String header) {
-        String subject = jwtTokenUtil.extractSubject(header);
-        return Response.ok(userRepository.findByEmail(subject)).build();
+        User user = userRepository.findByEmail(jwtTokenUtil.extractSubject(header)).get();
+        return Response.ok(user).build();
     }
 }

@@ -1,7 +1,6 @@
 package com.example.Kanban.Board.controller;
 
 
-import com.example.Kanban.Board.configuration.JsonWebToken;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskPatchDTO;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
