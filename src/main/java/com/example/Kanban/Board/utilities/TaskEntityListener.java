@@ -1,13 +1,13 @@
 package com.example.Kanban.Board.utilities;
 
-import com.example.Kanban.Board.model.Task;
+import java.util.Map;
+
+import com.example.Kanban.Board.model.Payload;
+
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostRemove;
 import jakarta.persistence.PostUpdate;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class TaskEntityListener {
 
@@ -36,28 +36,12 @@ public class TaskEntityListener {
     }
 
     private EntityChangeEvent createEvent(Object entity, String type) {
-        if (entity instanceof Task task) {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("id", task.getId());
-            payload.put("version", task.getVersion());
-            payload.put("title", task.getTitle());
-            payload.put("description", task.getDescription());
-            if (task.getTaskStatus() != null) {
-                payload.put("taskStatus", task.getTaskStatus().name());
-            }
-            if (task.getTaskPriority() != null) {
-                payload.put("taskPriority", task.getTaskPriority().name());
-            }
-            if (task.getCreatedBy() != null) {
-                payload.put("createdBy", task.getCreatedBy());
-            }
-            if (task.getUpdatedBy() != null) {
-                payload.put("updatedBy", task.getUpdatedBy());
-            }
-            payload.put("taskOrder", task.getTaskOrder());
-            return new EntityChangeEvent(type, payload);
+        if (entity == null) {
+            return null;
         }
-
+        if (entity instanceof Payload payload) {
+            return new EntityChangeEvent(type, payload.createPayload());
+        }
         return new EntityChangeEvent(type, Map.of("entityType", entity.getClass().getSimpleName()));
     }
 }

@@ -30,13 +30,10 @@ import jakarta.ws.rs.core.Response;
 public class TaskController {
 
     private final TaskService taskService;
-    private final JsonWebToken jwt;
 
-    public TaskController(TaskService taskService, JsonWebToken jwt) {
+    public TaskController(TaskService taskService) {
         this.taskService = taskService;
-        this.jwt = jwt;
     }
-
 
     @GET
     public Response get(
@@ -57,7 +54,6 @@ public class TaskController {
     @POST
     public Response create(@Valid Task task) {
         return taskService.create(
-                jwt.getSubject(),
                 task
         );
     }
@@ -72,7 +68,6 @@ public class TaskController {
 
 
         return taskService.update(
-                jwt.getSubject(),
                 id,
                 version,
                 task
@@ -87,7 +82,6 @@ public class TaskController {
             DragTaskDTO dragTaskDTO)
             throws TaskDoesNotExistException {
         return taskService.dragTask(
-                jwt.getSubject(),
                 dragTaskDTO
         );
     }
@@ -103,7 +97,6 @@ public class TaskController {
 
 
         return taskService.patch(
-                jwt.getSubject(),
                 id,
                 taskDTO
         );

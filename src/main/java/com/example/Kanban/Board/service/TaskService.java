@@ -50,33 +50,37 @@ public class TaskService {
     }
 
     @Transactional
-    public Response create(String userEmail, Task task) {
-        task.setCreatedBy(userEmail);
+    public Response create(Task task) {
         task.setTaskOrder(0);
-        return saveTask(userEmail, task);
+        return saveTask(task);
     }
 
     @Transactional
-    public Response saveTask(String userEmail, Task task) {
-        Task savedTask = taskRepository.save(userEmail, task);
+    public Response saveTask(Task task) {
+        Task savedTask = taskRepository.save(task);
         task.setId(savedTask.getId());
         return Response.ok(task).build();
     }
 
     @Transactional
-    public Response update(String userEmail, Long id, Integer version, Task task) throws OptimisticLockException, TaskDoesNotExistException {
-        Task existingTask = findByIdOrElseThrow(id);
-        checkVersions(existingTask.getVersion(), version);
-        task.setCreatedBy(existingTask.getCreatedBy());
-        task.setUpdatedBy(userEmail);
-        task.setTaskOrder(existingTask.getTaskOrder());
-        task.setVersion(version);
-        task.setId(id);
-        return saveTask(userEmail, task);
+    public Response saveTask(String userEmail, Task task) {
+        task.setCreatedBy(userEmail);
+        return saveTask(task);
     }
 
     @Transactional
-    public Response dragTask(String userEmail, DragTaskDTO dragTaskDTO) throws TaskDoesNotExistException {
+    public Response update(Long id, Integer version, Task task) throws OptimisticLockException, TaskDoesNotExistException {
+        Task existingTask = findByIdOrElseThrow(id);
+        checkVersions(existingTask.getVersion(), version);
+        task.setCreatedBy(existingTask.getCreatedBy());
+        task.setTaskOrder(existingTask.getTaskOrder());
+        task.setVersion(version);
+        task.setId(id);
+        return saveTask(task);
+    }
+
+    @Transactional
+    public Response dragTask(DragTaskDTO dragTaskDTO) throws TaskDoesNotExistException {
         Task task = taskRepository.findByIdIncludingUsers(dragTaskDTO.getTaskId())
                 .orElseThrow(() -> new TaskDoesNotExistException(dragTaskDTO.getTaskId()));
 
@@ -84,7 +88,7 @@ public class TaskService {
         TaskStatus taskStatus = dragTaskDTO.getTaskStatus();
         task.setTaskStatus(taskStatus);
         task.setTaskOrder(dragTaskDTO.getTaskOrder());
-        taskRepository.save(userEmail, task);
+        taskRepository.save(task);
         taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
         taskRepository.updateTaskOrderForStatus(task.getTaskOrder(), task.getTaskStatus().ordinal(), false);
         return Response.ok().entity(task).build();
@@ -93,7 +97,7 @@ public class TaskService {
 
 
     @Transactional
-    public Response patch(String userEmail, Long id, TaskPatchDTO taskPatchDTO)
+    public Response patch(Long id, TaskPatchDTO taskPatchDTO)
             throws OptimisticLockException, TaskDoesNotExistException {
         Task existingTask = taskRepository.findByIdIncludingUsers(id).orElseThrow(() -> new TaskDoesNotExistException(id));
         checkVersions(existingTask.getVersion(), taskPatchDTO.getVersion());
@@ -116,7 +120,7 @@ public class TaskService {
         if (taskPatchDTO.getUsers().isPresent()) {
             existingTask.setUsers(taskPatchDTO.getUsers().get());
         }
-        return saveTask(userEmail, existingTask);
+        return saveTask(existingTask);
     }
 
     @Transactional

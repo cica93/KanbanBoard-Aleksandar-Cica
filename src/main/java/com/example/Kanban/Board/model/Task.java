@@ -1,11 +1,17 @@
 package com.example.Kanban.Board.model;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.annotations.ColumnDefault;
 
+import com.example.Kanban.Board.annotations.CreatedBy;
+import com.example.Kanban.Board.annotations.UpdatedBy;
+import com.example.Kanban.Board.configuration.AuditingEntityListener;
 import com.example.Kanban.Board.utilities.TaskEntityListener;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,9 +30,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@EntityListeners(TaskEntityListener.class)
+@EntityListeners({TaskEntityListener.class, AuditingEntityListener.class})
 @Table(name = "task")
-public class Task implements Serializable {
+public class Task implements Serializable, Payload {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,9 +63,11 @@ public class Task implements Serializable {
     @Column(name = "task_priority", nullable = false)
     private TaskPriority taskPriority;
 
+    @CreatedBy
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 
+    @UpdatedBy
     @Column(name = "updated_by")
     private String updatedBy;
 
@@ -182,6 +190,24 @@ public class Task implements Serializable {
             return false;
         }
         return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> createPayload() {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", this.getId());
+        payload.put("version", this.getVersion());
+        payload.put("title", this.getTitle());
+        payload.put("description", this.getDescription());
+        payload.put("taskStatus", this.getTaskStatus().name());
+        payload.put("taskPriority", this.getTaskPriority().name());
+        payload.put("createdBy", this.getCreatedBy());
+        if (this.getUpdatedBy() != null) {
+            payload.put("updatedBy", this.getUpdatedBy());
+        }
+        payload.put("taskOrder", this.getTaskOrder());
+        return payload;
     }
 
 }

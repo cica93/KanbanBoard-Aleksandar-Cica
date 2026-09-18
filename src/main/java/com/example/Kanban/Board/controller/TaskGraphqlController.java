@@ -38,14 +38,14 @@ public class TaskGraphqlController {
     @Mutation("createTask")
     public Task createTask(@NotNull @Name("task") TaskModify taskInput) {
         ObjectMapper objectMapper = new ObjectMapper();
-        Task created = (Task) taskService.create(jwt.getSubject(), objectMapper.convertValue(taskInput, Task.class)).getEntity();
+        Task created = (Task) taskService.create(objectMapper.convertValue(taskInput, Task.class)).getEntity();
         return created;
     }
 
     @Mutation("dragTask")
     public Task dragTask(@NotNull @Name("dragTask") DragTaskDTO dragTaskDTO)
             throws TaskDoesNotExistException {
-        Task task = (Task) taskService.dragTask(jwt.getSubject(), dragTaskDTO).getEntity();
+        Task task = (Task) taskService.dragTask(dragTaskDTO).getEntity();
         return task;
     }
 
@@ -59,7 +59,7 @@ public class TaskGraphqlController {
     public Task updateTask(@NotNull @Name("id") Long id, @NotNull @Name("version") Integer version,
             @NotNull @Name("task") TaskModify taskInput) throws TaskDoesNotExistException {
         ObjectMapper objectMapper = new ObjectMapper();
-        return (Task) taskService.update(jwt.getSubject(), id, version, objectMapper.convertValue(taskInput, Task.class)).getEntity();
+        return (Task) taskService.update(id, version, objectMapper.convertValue(taskInput, Task.class)).getEntity();
     }
 
     @Mutation("deleteTask")

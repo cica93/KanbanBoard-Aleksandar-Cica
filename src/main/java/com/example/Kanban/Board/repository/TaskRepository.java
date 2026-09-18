@@ -7,10 +7,8 @@ import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Jdbi;
 
-import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.mapper.TaskRowMapper;
 import com.example.Kanban.Board.model.Task;
-import com.example.Kanban.Board.model.User;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -58,14 +56,12 @@ public class TaskRepository implements PanacheRepository<Task> {
     }
 
     @Transactional
-    public Task save(String userEmail, Task task) {
+    public Task save(Task task) {
         if (task.getId() == null) {
-            task.setCreatedBy(userEmail);
             entityManager.persist(task);
             entityManager.flush();
             return task;
         }
-        task.setUpdatedBy(userEmail);
         Task merged = entityManager.merge(task);
         entityManager.flush();
         return merged;
@@ -84,22 +80,6 @@ public class TaskRepository implements PanacheRepository<Task> {
         entityManager.createNativeQuery(sql)
                 .setParameter("taskOrder", taskOrder)
                 .setParameter("taskStatus", taskStatus)
-                .executeUpdate();
-    }
-
-    @Transactional
-    public int updateTaskStatus(DragTaskDTO dragTaskDTO, User user) {
-        if (dragTaskDTO.getTaskOrder() == null) {
-            return 0;
-        }
-        String sql = "UPDATE task SET task_order = :taskOrder, task_status = :taskStatus, updated_by = :updatedBy WHERE id = :taskId AND version = :version";
-
-        return entityManager.createNativeQuery(sql)
-                .setParameter("taskOrder", dragTaskDTO.getTaskOrder())
-                .setParameter("taskStatus", dragTaskDTO.getTaskStatus().ordinal())
-                .setParameter("updatedBy", user.getEmail())
-                .setParameter("taskId", dragTaskDTO.getTaskId())
-                .setParameter("version", dragTaskDTO.getTaskVersion())
                 .executeUpdate();
     }
 
