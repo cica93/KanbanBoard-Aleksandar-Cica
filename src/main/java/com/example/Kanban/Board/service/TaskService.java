@@ -1,11 +1,14 @@
 package com.example.Kanban.Board.service;
 
 
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.jdbi.v3.core.Jdbi;
 
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskPatchDTO;
@@ -13,25 +16,35 @@ import com.example.Kanban.Board.dto.TasksByStatusDTO;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.model.Task;
 import com.example.Kanban.Board.model.TaskStatus;
+import com.example.Kanban.Board.repository.NativeTaskRepository;
 import com.example.Kanban.Board.repository.TaskRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.OptimisticLockException;
+import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.TransactionManager;
+
 import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final EntityManager entityManager;
+    private final TransactionManager transactionManager;
+    private final Jdbi jdbi;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, EntityManager entityManager, TransactionManager transactionManager, Jdbi jdbi) {
         this.taskRepository = taskRepository;
+        this.entityManager = entityManager;
+        this.transactionManager = transactionManager;
+        this.jdbi = jdbi;
     }
 
     public Response get(Integer limit, Integer offset, String description) {
-
-        List<Task> tasks = taskRepository.getTasks(limit, offset, description);
+        List<Task> tasks = jdbi.withExtension(NativeTaskRepository.class, repo -> repo.findTasks(description, null, offset + 1, offset + limit + 1));
 
         Map<TaskStatus, List<Task>> tasksByStatusMap = tasks.stream().collect(Collectors.groupingBy(Task::getTaskStatus, Collectors.toList()));
 
@@ -57,7 +70,7 @@ public class TaskService {
 
     @Transactional
     public Response saveTask(Task task) {
-        Task savedTask = taskRepository.save(task);
+        Task savedTask = save(task);
         task.setId(savedTask.getId());
         return Response.ok(task).build();
     }
@@ -81,25 +94,22 @@ public class TaskService {
 
     @Transactional
     public Response dragTask(DragTaskDTO dragTaskDTO) throws TaskDoesNotExistException {
-        Task task = taskRepository.findByIdIncludingUsers(dragTaskDTO.getTaskId())
-                .orElseThrow(() -> new TaskDoesNotExistException(dragTaskDTO.getTaskId()));
-
+        Task task = findByIdIcluedeUsers(dragTaskDTO.getTaskId());
         checkVersions(task.getVersion(), dragTaskDTO.getTaskVersion());
         TaskStatus taskStatus = dragTaskDTO.getTaskStatus();
         task.setTaskStatus(taskStatus);
         task.setTaskOrder(dragTaskDTO.getTaskOrder());
-        taskRepository.save(task);
-        taskRepository.updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
-        taskRepository.updateTaskOrderForStatus(task.getTaskOrder(), task.getTaskStatus().ordinal(), false);
+        save(task);
+        updateTaskOrderForStatus(dragTaskDTO.getTaskOrder(), taskStatus.ordinal(), true);
+        updateTaskOrderForStatus(task.getTaskOrder(), task.getTaskStatus().ordinal(), false);
         return Response.ok().entity(task).build();
-
     }
 
 
     @Transactional
     public Response patch(Long id, TaskPatchDTO taskPatchDTO)
             throws OptimisticLockException, TaskDoesNotExistException {
-        Task existingTask = taskRepository.findByIdIncludingUsers(id).orElseThrow(() -> new TaskDoesNotExistException(id));
+        Task existingTask = findByIdIcluedeUsers(id);
         checkVersions(existingTask.getVersion(), taskPatchDTO.getVersion());
         if (taskPatchDTO.getDescription().isPresent()) {
             existingTask.setDescription(taskPatchDTO.getDescription().get());
@@ -127,16 +137,36 @@ public class TaskService {
     public Response delete(Long id, Integer version) throws TaskDoesNotExistException, OptimisticLockException {
         Task task = findByIdOrElseThrow(id);
         checkVersions(task.getVersion(), version);
-        taskRepository.delete(task);
+        try {
+            taskRepository.deleteById(task.getId());
+            updateTaskOrderForStatus(task.getTaskOrder(), task.getTaskStatus().ordinal(), false);
+        } catch (Exception e) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (SystemException | IllegalStateException ignored) {
+            }
+
+            throw new RuntimeException(e);
+        }
         return Response.ok().entity(Map.of("deleted", 1)).build();
     }
 
-    private Task findByIdOrElseThrow(Long id) throws TaskDoesNotExistException {
-        Task task = taskRepository.findById(id);
-        if (task == null) {
-            throw new TaskDoesNotExistException(id);
+    public void updateTaskOrderForStatus(Integer taskOrder, int taskStatus, boolean increase) {
+        if (taskOrder == null) {
+            return;
         }
-        return task;
+        String sql = increase
+                ? "UPDATE task SET task_order = task_order + 1 WHERE task_order >= :taskOrder AND task_status = :taskStatus"
+                : "UPDATE task SET task_order = GREATEST(task_order - 1, 0) WHERE task_order > :taskOrder AND task_status = :taskStatus";
+
+        entityManager.createNativeQuery(sql)
+                .setParameter("taskOrder", taskOrder)
+                .setParameter("taskStatus", taskStatus)
+                .executeUpdate();
+    }
+
+    private Task findByIdOrElseThrow(Long id) throws TaskDoesNotExistException {
+        return taskRepository.findByIdOptional(id).orElseThrow(() -> new TaskDoesNotExistException(id));
     }
 
     private void checkVersions(Integer databaseVersion, Integer taskVersion) throws OptimisticLockException {
@@ -144,4 +174,23 @@ public class TaskService {
             throw new OptimisticLockException("Task already modified");
         }
     }
+
+    private Task findByIdIcluedeUsers(Long id) throws TaskDoesNotExistException {
+        return jdbi.withExtension(NativeTaskRepository.class, repo -> repo.findTasks(null, id, 1, 2))
+                .stream().findFirst()
+                .orElseThrow(() -> new TaskDoesNotExistException(id));
+
+    }
+
+    public Task save(Task task) {
+        if (task.getId() == null) {
+            taskRepository.persist(task);
+            taskRepository.flush();
+            return task;
+        }
+        Task merged = entityManager.merge(task);
+        entityManager.flush();
+        return merged;
+    }
+
 }

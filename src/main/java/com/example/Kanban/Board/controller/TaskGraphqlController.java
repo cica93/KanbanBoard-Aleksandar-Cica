@@ -7,7 +7,6 @@ import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
-import com.example.Kanban.Board.configuration.JsonWebToken;
 import com.example.Kanban.Board.dto.DragTaskDTO;
 import com.example.Kanban.Board.dto.TaskModify;
 import com.example.Kanban.Board.dto.TasksByStatusDTO;
@@ -26,12 +25,10 @@ import jakarta.validation.constraints.NotNull;
 public class TaskGraphqlController {
 
     private final TaskService taskService;
-    private final JsonWebToken jwt;
 
     @Inject
-    public TaskGraphqlController(TaskService taskService, JsonWebToken jwt) {
+    public TaskGraphqlController(TaskService taskService) {
         this.taskService = taskService;
-        this.jwt = jwt;
     }
 
 
