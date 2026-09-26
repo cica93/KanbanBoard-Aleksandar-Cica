@@ -82,6 +82,24 @@ public class Task implements Serializable, Payload {
             inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
     private List<User> users;
 
+    public Task() {
+
+    }
+
+    public Task(Long id, Integer version, String title, String description, TaskStatus taskStatus,
+            TaskPriority taskPriority) {
+        this.id = id;
+        this.version = version;
+        this.title = title;
+        this.description = description;
+        this.taskStatus = taskStatus;
+        this.taskPriority = taskPriority;
+    }
+
+    public Task(Long id, Integer version, String title, String description, Integer taskStatus, Integer taskPriority) {
+        this(id, version, title, description, TaskStatus.values()[taskStatus], TaskPriority.values()[taskPriority]);
+    }
+
     public Long getId() {
         return id;
     }

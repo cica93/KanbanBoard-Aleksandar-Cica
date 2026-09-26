@@ -1,11 +1,8 @@
 package com.example.Kanban.Board.service;
 
-import java.util.List;
 import java.util.Map;
 
 import com.example.Kanban.Board.dto.PageResponse;
-import com.example.Kanban.Board.filters.Filter;
-import com.example.Kanban.Board.filters.Operator;
 import com.example.Kanban.Board.model.User;
 import com.example.Kanban.Board.repository.UserRepository;
 import com.example.Kanban.Board.utilities.JwtTokenUtil;
@@ -24,9 +21,9 @@ public class UserService {
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
-    public Response get(String fullName, Integer limit, Integer offset, String columnSort, String direction) {
+    public Response get(String query, Integer limit, Integer offset, String columnSort, String direction) {
         PageResponse<Map<String, Object>> data
-                = userRepository.findByFilters(List.of(fullName == null ? null : new Filter("fullName", Operator.CONTAINS, fullName)), limit, offset, columnSort, direction, true);
+                = userRepository.findByFilters(query, limit, offset, columnSort, direction, true);
         return Response.ok(data).build();
     }
 
@@ -37,6 +34,7 @@ public class UserService {
 
     public Response currentUser(String header) {
         User user = userRepository.findByEmail(jwtTokenUtil.extractSubject(header)).get();
+        user.setTasks(null);
         return Response.ok(user).build();
     }
 }

@@ -5,10 +5,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.example.Kanban.Board.dto.PageResponse;
-import com.example.Kanban.Board.filters.Filter;
-import com.example.Kanban.Board.filters.Operator;
+import com.example.Kanban.Board.filters.FilterModel;
 import com.example.Kanban.Board.filters.PredicateCreator;
 import com.example.Kanban.Board.model.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,12 +23,20 @@ import jakarta.transaction.Transactional;
 public class UserRepository implements PanacheRepository<User> {
 
     private final EntityManager entityManager;
+    private final ObjectMapper objectMapper;
 
-    public UserRepository(EntityManager entityManager) {
+    public UserRepository(EntityManager entityManager, ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
         this.entityManager = entityManager;
     }
 
-    public PageResponse<Map<String, Object>> findByFilters(List<Filter> filters, Integer limit, Integer offset, String columnSort,
+    public PageResponse<Map<String, Object>> findByFilters(String filterJson, Integer limit, Integer offset, String columnSort,
+            String direction, boolean includeCountingQuery) {
+        return findByFilters(PredicateCreator.parseFilters(filterJson, objectMapper), limit, offset, columnSort,
+                direction, includeCountingQuery);
+    }
+
+    public PageResponse<Map<String, Object>> findByFilters(Map<String, FilterModel> filter, Integer limit, Integer offset, String columnSort,
             String direction, boolean includeCountingQuery) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         Long total = 0L;
@@ -48,11 +56,11 @@ public class UserRepository implements PanacheRepository<User> {
         if (includeCountingQuery) {
             CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
             Root<User> countRoot = countQuery.from(User.class);
-            countQuery.select(cb.count(countRoot)).where(PredicateCreator.buildPredicates(cb, countRoot, filters));
+            countQuery.select(cb.count(countRoot)).where(PredicateCreator.buildFilters(cb, countRoot, filter));
             total = entityManager.createQuery(countQuery).getSingleResult();
         }
 
-        query.where(PredicateCreator.buildPredicates(cb, userRoot, filters));
+        query.where(PredicateCreator.buildFilters(cb, userRoot, filter));
         query.orderBy(
                 "desc".equalsIgnoreCase(direction)
                 ? cb.desc(userRoot.get(notNullSort))
@@ -68,19 +76,7 @@ public class UserRepository implements PanacheRepository<User> {
     }
 
     public Optional<User> findByEmail(String email) {
-        Map<String, Object> t = findByFilters(List.of(new Filter("email", Operator.EQUALS,
-                email)),
-                1, 0, null, null, false).getContent().stream().findFirst().get();
-        if (t != null) {
-            User u = new User();
-            u.setEmail(t.get("email").toString());
-            u.setPassword((String) t.get("password"));
-            u.setFullName((String) t.get("fullName"));
-            u.setId((Long) t.get("id"));
-            return Optional.of(u);
-
-        }
-        return Optional.empty();
+        return find("email", email).firstResultOptional();
     }
 
    private List<Map<String, Object>> convert(List<Tuple> tuples) {

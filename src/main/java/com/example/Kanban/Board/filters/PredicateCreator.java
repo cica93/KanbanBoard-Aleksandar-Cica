@@ -1,123 +1,165 @@
 package com.example.Kanban.Board.filters;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 public class PredicateCreator {
 
-   public static List<Filter> convertFilters(
-        Map<String, AgGridFilter> filterModel) {
+    private static <T> Predicate buildPredicate(
+            CriteriaBuilder cb,
+            Root<T> root,
+            String field,
+            FilterModel filter) {
+        if (filter.conditions() != null && !filter.conditions().isEmpty()) {
+            List<Predicate> predicates = filter.conditions()
+                    .stream()
+                    .map(condition -> buildPredicate(cb, root, field, condition))
+                    .toList();
 
-    if (filterModel == null || filterModel.isEmpty()) {
-        return List.of();
+            return "OR".equalsIgnoreCase(filter.operator())
+                    ? cb.or(predicates.toArray(Predicate[]::new))
+                    : cb.and(predicates.toArray(Predicate[]::new));
+        }
+
+        Path<?> path = root.get(field);
+        FilterType filterType = FilterType.fromValue(filter.type());
+
+
+        return switch (filterType) {
+            case EQUALS ->
+                buildEquals(cb, path, filter.filter());
+
+            case NOT_EQUAL ->
+                cb.not(buildEquals(cb, path, filter.filter()));
+
+            case CONTAINS ->
+                cb.like(
+                cb.lower(path.as(String.class)),
+                "%" + filter.filter().toString().toLowerCase() + "%");
+
+            case NOT_CONTAINS ->
+                cb.not(
+                cb.like(
+                cb.lower(path.as(String.class)),
+                "%" + filter.filter().toString().toLowerCase() + "%"));
+
+            case STARTS_WITH ->
+                cb.like(
+                cb.lower(path.as(String.class)),
+                filter.filter().toString().toLowerCase() + "%");
+
+            case ENDS_WITH ->
+                cb.like(
+                cb.lower(path.as(String.class)),
+                "%" + filter.filter().toString().toLowerCase());
+
+            case BLANK ->
+                cb.or(
+                cb.isNull(path),
+                cb.equal(cb.trim(path.as(String.class)), ""));
+
+            case NOT_BLANK ->
+                cb.and(
+                cb.isNotNull(path),
+                cb.notEqual(cb.trim(path.as(String.class)), ""));
+
+            default ->
+                throw new IllegalArgumentException(
+                        "Unsupported filter type: " + filter.type());
+        };
     }
 
-    return filterModel.entrySet()
-            .stream()
-            .map(entry -> {
+        
+    private static Predicate buildEquals(
+        CriteriaBuilder cb,
+        Path<?> path,
+        Object value) {
+        Class<?> javaType = path.getJavaType();
 
-                String field = entry.getKey();
-                AgGridFilter agFilter = entry.getValue();
+        if (value instanceof Collection<?> values) {
 
-                return new Filter(
-                        field,
-                        Operator.fromValue(
-                                agFilter.type()
-                        ),
-                        agFilter.filter()
+                CriteriaBuilder.In<Object> in = cb.in(path);
+
+                if (javaType.isEnum()) {
+                        values.forEach(v -> in.value(toEnum(javaType, v.toString())));
+                } else {
+                        values.forEach(in::value);
+                }
+
+                return in;
+        }
+
+        if (javaType.isEnum()) {
+                return cb.equal(
+                                path,
+                                toEnum(javaType, value.toString()));
+        }
+
+                return cb.equal(path, value);
+        }
+
+        @SuppressWarnings({"rawtypes","unchecked"})
+        private static Enum<?> toEnum(
+                Class<?> enumType,
+                String value) {
+                return Enum.valueOf(
+                        (Class<? extends Enum>) enumType,
+                        value
                 );
-            })
-            .toList();
+        }
+
+    public static <T> Predicate buildFilters(
+            CriteriaBuilder cb,
+            Root<T> root,
+            Map<String, FilterModel> filters
+    ) {
+        List<Predicate> predicates = new ArrayList<>();
+
+        filters.forEach((field, filter) -> {
+            predicates.add(PredicateCreator.buildPredicate(cb, root, field, filter));
+        });
+
+        return cb.and(
+                predicates.toArray(Predicate[]::new));
     }
-    public static Predicate[] buildPredicates(CriteriaBuilder cb, Root<?> root, List<Filter> filters) {
-        return filters.stream()
-                .filter(Objects::nonNull)
-                .map(filter -> {
-                    return switch (filter.getOperator()) {
-                case EQUALS -> 
-                    cb.equal(
-                            root.get(filter.getField()),
-                            filter.getValue()
-                            );
-                case NOT_EQUALS -> 
-                    cb.notEqual(
-                            root.get(filter.getField()),
-                            filter.getValue()
-                    );
-                    
-                        case CONTAINS ->
-                    cb.like(
-                            cb.lower(
-                                    root.get(filter.getField())
-                            ),
-                            "%" + filter.getValue()
-                                    .toString()
-                                    .toLowerCase() + "%"
-                            );
-                        case NOT_CONTAINS ->
-                            cb.notLike(
-                            cb.lower(
-                            root.get(filter.getField())
-                            ),
-                            "%" + filter.getValue()
-                            .toString()
-                            .toLowerCase() + "%"
-                            );
-                    
-                case STARTS_WITH ->
-                    cb.like(
-                            cb.lower(
-                                    root.get(filter.getField())
-                            ),
-                            filter.getValue()
-                                    .toString()
-                                    .toLowerCase() + "%"
-                            );
-                    
-                case ENDS_WITH ->
-                    cb.like(
-                            cb.lower(
-                                    root.get(filter.getField())
-                            ),
-                            "%"+ filter.getValue()
-                                    .toString()
-                                    .toLowerCase()
-                    );
 
-                        case IS_NULL ->
-                            cb.isNull(root.get(filter.getField()));
-                        case NOT_NULL ->
-                            cb.isNotNull(root.get(filter.getField()));
+    public static <T> Predicate buildFilters(
+            CriteriaBuilder cb,
+            Root<T> root,
+            String filters,
+            ObjectMapper objectMapper
+    ) {
+        Map<String, FilterModel> parsed = parseFilters(filters, objectMapper);
+        return PredicateCreator.buildFilters(cb, root, parsed);
+    }
 
-                case GREATER_THAN ->
-                    cb.greaterThan(
-                            root.get(filter.getField()).as(Comparable.class),
-                            (Comparable) filter.getValue()
-                    );
+    public static Map<String, FilterModel> parseFilters(String filterJson, ObjectMapper objectMapper) {
+        if (filterJson == null || filterJson.isBlank()) {
+            return Map.of();
+        }
 
-                case LESS_THAN ->
-                    cb.lessThan(
-                            root.get(filter.getField()).as(Comparable.class),
-                            (Comparable) filter.getValue()
-                    );
-
-                case GREATER_THAN_OR_EQUAL ->
-                    cb.greaterThanOrEqualTo(
-                            root.get(filter.getField()).as(Comparable.class),
-                            (Comparable) filter.getValue()
-                    );
-
-                case LESS_THAN_OR_EQUAL ->
-                    cb.lessThanOrEqualTo(
-                            root.get(filter.getField()).as(Comparable.class),
-                            (Comparable) filter.getValue()
-                    );
-                    };
-                }).toArray(Predicate[]::new);
+        try {
+            return objectMapper.readValue(
+                    filterJson,
+                    new TypeReference<Map<String, FilterModel>>() {
+            }
+            );
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(
+                    "Invalid AG Grid filter JSON",
+                    e
+            );
+        }
     }
 }

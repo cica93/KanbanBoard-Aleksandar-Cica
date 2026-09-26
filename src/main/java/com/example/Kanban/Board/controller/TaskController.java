@@ -39,7 +39,18 @@ public class TaskController {
             @QueryParam("description") String description,
             @QueryParam("offset") @DefaultValue("0") Integer offset,
             @QueryParam("limit") @DefaultValue("10") Integer limit) {
-        return taskService.get(limit, offset, description); 
+        return taskService.get(limit, offset, description);
+    }
+
+    @GET
+    @Path("/getTableResponse")
+    public Response getTableResponse(
+            @QueryParam("filter") String filter,
+            @QueryParam("limit") @DefaultValue("10") Integer limit,
+            @QueryParam("offset") @DefaultValue("0") Integer offset,
+            @QueryParam("sortColumn") @DefaultValue("id") String sortColumn,
+            @QueryParam("direction") @DefaultValue("desc") String direction) {
+        return taskService.getTableResponse(filter, limit, offset, sortColumn, direction);
     }
 
     @GET

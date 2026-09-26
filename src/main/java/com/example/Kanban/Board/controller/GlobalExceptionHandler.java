@@ -8,8 +8,6 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 
 import com.example.Kanban.Board.exceptions.BadCredentialsException;
 import com.example.Kanban.Board.exceptions.ForbiddenMethodException;
-import com.example.Kanban.Board.exceptions.NotValidTaskPriorityException;
-import com.example.Kanban.Board.exceptions.NotValidTaskStatusException;
 import com.example.Kanban.Board.exceptions.TaskDoesNotExistException;
 import com.example.Kanban.Board.exceptions.UserDoesNotExistException;
 
@@ -54,8 +52,6 @@ public class GlobalExceptionHandler
         }
 
         if (ex instanceof UserDoesNotExistException || ex instanceof TaskDoesNotExistException
-                || ex instanceof NotValidTaskStatusException
-                || ex instanceof NotValidTaskPriorityException
                 || ex instanceof BadCredentialsException
                 || ex instanceof OptimisticLockException) {
 
@@ -66,7 +62,6 @@ public class GlobalExceptionHandler
         }
 
         if (ex instanceof SqlTreeCreationException sqlTree) {
-            sqlTree.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ErrorResponse(sqlTree.getLocalizedMessage()))
                     .build();
@@ -84,7 +79,6 @@ public class GlobalExceptionHandler
     public static class ErrorResponse {
 
         private final String message;
-
 
         public ErrorResponse(String message) {
             this.message = message;
