@@ -13,9 +13,13 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Expression;
+
+import java.time.LocalDate;
 
 public class PredicateCreator {
 
+    @SuppressWarnings("unchecked")
     private static <T> Predicate buildPredicate(
             CriteriaBuilder cb,
             Root<T> root,
@@ -33,36 +37,108 @@ public class PredicateCreator {
         }
 
         Path<?> path = root.get(field);
-        FilterType filterType = FilterType.fromValue(filter.type());
-
-
-        return switch (filterType) {
+        FilterType type = FilterType.fromValue(filter.type());
+        boolean isFilterTypeDate = "date".equalsIgnoreCase(filter.filterType());
+        Object filterValue = isFilterTypeDate ? filter.dateFrom() : filter.filter();
+        return switch (type) {
             case EQUALS ->
-                buildEquals(cb, path, filter.filter());
+                buildEquals(cb, path, filterValue, isFilterTypeDate);
 
             case NOT_EQUAL ->
-                cb.not(buildEquals(cb, path, filter.filter()));
+                cb.not(buildEquals(cb, path, filterValue, isFilterTypeDate));
 
             case CONTAINS ->
                 cb.like(
                 cb.lower(path.as(String.class)),
-                "%" + filter.filter().toString().toLowerCase() + "%");
+                "%" + filterValue.toString().toLowerCase() + "%");
+
+            case GREATER_THAN_OR_EQUAL -> {
+                if (isFilterTypeDate && filterValue instanceof String dateString) {
+                    yield cb.greaterThanOrEqualTo(
+                    path.as(LocalDate.class),
+                    LocalDate.parse(dateString));
+                }
+                yield cb.greaterThanOrEqualTo(
+                (Expression<? extends Comparable>) path,
+                (Comparable) filterValue);
+            }
+
+            case GREATHER_THEN -> {
+                if (isFilterTypeDate && filterValue instanceof String dateString) {
+                    yield cb.greaterThan(
+                    path.as(LocalDate.class),
+                    LocalDate.parse(dateString));
+                }
+                yield cb.greaterThan(
+                (Expression<? extends Comparable>) path,
+                (Comparable) filterValue);
+            }
+
+            case LESS_THAN -> {
+
+                if (isFilterTypeDate && filterValue instanceof String dateString) {
+                    yield cb.lessThan(
+                    path.as(LocalDate.class),
+                    LocalDate.parse(dateString));
+                }
+                yield cb.lessThan(
+                (Expression<? extends Comparable>) path,
+                (Comparable) filterValue);
+            }
+
+            case LESS_THAN_OR_EQUAL -> {
+                if (isFilterTypeDate && filterValue instanceof String dateString) {
+                    yield cb.lessThanOrEqualTo(
+                    path.as(LocalDate.class),
+                    LocalDate.parse(dateString));
+                }
+                yield cb.lessThanOrEqualTo(
+                (Expression<? extends Comparable>) path,
+                (Comparable) filterValue);
+            }
+
+            case BETWEEN -> {
+                List<?> values = (List<?>) filterValue;
+                if (values.size() != 2) {
+                    throw new IllegalArgumentException(
+                            "BETWEEN filter requires exactly two values");
+                }
+                if (isFilterTypeDate && values.get(0) instanceof String dateString1 && values.get(1) instanceof String dateString2) {
+                    yield cb.between(
+                    path.as(LocalDate.class),
+                    LocalDate.parse(dateString1),
+                    LocalDate.parse(dateString2));
+                }
+
+                yield cb.between(
+                (Expression<? extends Comparable>) path,
+                (Comparable) values.get(0),
+                (Comparable) values.get(1)
+                );
+            }
+
+            case IN_RANGE -> {
+                yield cb.between(
+                path.as(LocalDate.class),
+                LocalDate.parse(filter.dateFrom()),
+                LocalDate.parse(filter.dateTo()));
+            }
 
             case NOT_CONTAINS ->
                 cb.not(
                 cb.like(
                 cb.lower(path.as(String.class)),
-                "%" + filter.filter().toString().toLowerCase() + "%"));
+                "%" + filterValue.toString().toLowerCase() + "%"));
 
             case STARTS_WITH ->
                 cb.like(
                 cb.lower(path.as(String.class)),
-                filter.filter().toString().toLowerCase() + "%");
+                filterValue.toString().toLowerCase() + "%");
 
             case ENDS_WITH ->
                 cb.like(
                 cb.lower(path.as(String.class)),
-                "%" + filter.filter().toString().toLowerCase());
+                "%" + filterValue.toString().toLowerCase());
 
             case BLANK ->
                 cb.or(
@@ -84,7 +160,8 @@ public class PredicateCreator {
     private static Predicate buildEquals(
         CriteriaBuilder cb,
         Path<?> path,
-        Object value) {
+            Object value,
+            boolean isFilterTypeDate) {
         Class<?> javaType = path.getJavaType();
 
         if (value instanceof Collection<?> values) {
@@ -101,9 +178,14 @@ public class PredicateCreator {
         }
 
         if (javaType.isEnum()) {
-                return cb.equal(
-                                path,
-                                toEnum(javaType, value.toString()));
+            return cb.equal(
+                    path,
+                    toEnum(javaType, value.toString()));
+        }
+        if (isFilterTypeDate && value instanceof String dateString) {
+            return cb.equal(
+                    path.as(LocalDate.class),
+                    LocalDate.parse(dateString));
         }
 
                 return cb.equal(path, value);

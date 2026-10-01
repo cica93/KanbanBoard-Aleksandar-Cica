@@ -10,6 +10,12 @@ public enum FilterType {
     STARTS_WITH("startsWith"),
     ENDS_WITH("endsWith"),
     BLANK("blank"),
+    GREATHER_THEN("greaterThan"),
+    GREATER_THAN_OR_EQUAL("greaterThanOrEqual"),
+    LESS_THAN("lessThan"),
+    LESS_THAN_OR_EQUAL("lessThanOrEqual"),
+    BETWEEN("between"),
+    IN_RANGE("inRange"),
     NOT_BLANK("notBlank");
 
     private final String value;

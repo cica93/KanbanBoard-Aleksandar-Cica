@@ -79,7 +79,9 @@ public class TaskService {
                 taskRoot.get("title"),
                 taskRoot.get("description"),
                 taskRoot.get("taskStatus"),
-                taskRoot.get("taskPriority")));
+                taskRoot.get("taskPriority"),
+                taskRoot.get("createdAt"),
+                taskRoot.get("updatedAt")));
 
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Task> countRoot = countQuery.from(Task.class);

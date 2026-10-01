@@ -1,13 +1,16 @@
 package com.example.Kanban.Board.model;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.hibernate.annotations.ColumnDefault;
 
+import com.example.Kanban.Board.annotations.CreatedAt;
 import com.example.Kanban.Board.annotations.CreatedBy;
+import com.example.Kanban.Board.annotations.UpdatedAt;
 import com.example.Kanban.Board.annotations.UpdatedBy;
 import com.example.Kanban.Board.configuration.AuditingEntityListener;
 import com.example.Kanban.Board.utilities.TaskEntityListener;
@@ -71,6 +74,14 @@ public class Task implements Serializable, Payload {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    @CreatedAt
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @UpdatedAt
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @ColumnDefault("0")
     @Column(nullable = false, name = "task_order")
     private Integer taskOrder;
@@ -96,8 +107,11 @@ public class Task implements Serializable, Payload {
         this.taskPriority = taskPriority;
     }
 
-    public Task(Long id, Integer version, String title, String description, Integer taskStatus, Integer taskPriority) {
-        this(id, version, title, description, TaskStatus.values()[taskStatus], TaskPriority.values()[taskPriority]);
+    public Task(Long id, Integer version, String title, String description, TaskStatus taskStatus,
+            TaskPriority taskPriority, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this(id, version, title, description, taskStatus, taskPriority);
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public Long getId() {
@@ -178,6 +192,22 @@ public class Task implements Serializable, Payload {
 
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     @Override

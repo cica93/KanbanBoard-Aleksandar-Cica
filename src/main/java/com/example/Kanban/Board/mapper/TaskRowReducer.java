@@ -1,8 +1,11 @@
 package com.example.Kanban.Board.mapper;
 
+import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.jdbi.v3.core.mapper.MappingException;
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
 
@@ -27,6 +30,8 @@ public class TaskRowReducer implements LinkedHashMapRowReducer<Long, Task> {
             task.setVersion(row.getColumn("version", Integer.class));
             task.setTitle(row.getColumn("title", String.class));
             task.setDescription(row.getColumn("description", String.class));
+            task.setCreatedAt(getOptionalTimestamp(row, "created_at"));
+            task.setUpdatedAt(getOptionalTimestamp(row, "updated_at"));
             task.setUsers(new ArrayList<>());
         }
         User user = new User();
@@ -37,5 +42,25 @@ public class TaskRowReducer implements LinkedHashMapRowReducer<Long, Task> {
         task.getUsers().add(user);
         container.put(taskId, task);
       
+    }
+
+    private LocalDateTime getOptionalTimestamp(RowView row, String columnName) {
+        try {
+            return row.getColumn(columnName, LocalDateTime.class);
+        } catch (MappingException exception) {
+            if (exception.getCause() instanceof SQLException sqlException
+                    && isMissingColumn(sqlException.getSQLState())) {
+                return null;
+            }
+            throw exception;
+        }
+    }
+
+    private boolean isMissingColumn(String sqlState) {
+        return "42703".equals(sqlState)
+                || "42S22".equals(sqlState)
+            || "S0022".equals(sqlState)
+                || "42122".equals(sqlState)
+                || "42X04".equals(sqlState);
     }
 }

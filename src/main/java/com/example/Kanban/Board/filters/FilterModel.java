@@ -4,6 +4,8 @@ import java.util.List;
 
 public record FilterModel(
         String filterType,
+        String dateFrom,
+        String dateTo,
         String operator,
         List<FilterModel> conditions,
         String type,

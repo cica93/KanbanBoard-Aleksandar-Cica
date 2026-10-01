@@ -1,8 +1,11 @@
 package com.example.Kanban.Board.configuration;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 
+import com.example.Kanban.Board.annotations.CreatedAt;
 import com.example.Kanban.Board.annotations.CreatedBy;
+import com.example.Kanban.Board.annotations.UpdatedAt;
 import com.example.Kanban.Board.annotations.UpdatedBy;
 import com.example.Kanban.Board.utilities.ReflectionUtils;
 
@@ -24,11 +27,13 @@ public class AuditingEntityListener {
     @PrePersist
     public void prePersist(Object entity) throws IllegalAccessException {
         ReflectionUtils.setValueByAnnotation(entity, CreatedBy.class, getCurrentUserEmail());
+        ReflectionUtils.setValueByAnnotation(entity, CreatedAt.class, LocalDateTime.now());
     }
 
     @PreUpdate
     public void preUpdate(Object entity) throws IllegalAccessException {
         ReflectionUtils.setValueByAnnotation(entity, UpdatedBy.class, getCurrentUserEmail());
+        ReflectionUtils.setValueByAnnotation(entity, UpdatedAt.class, LocalDateTime.now());
     }
 
     private String getCurrentUserEmail() {
